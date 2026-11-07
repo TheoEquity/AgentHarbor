@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS agentharbor_event_project_session_idx;

@@ -1,0 +1,42 @@
+{
+  "description": "AgentHarbor local Codex event and memory hooks",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"<repo-root>/tools/agentharbor-connector/connector.py\" hook",
+            "commandWindows": "py -3 \"<repo-root>\\tools\\agentharbor-connector\\connector.py\" hook",
+            "timeout": 3,
+            "additionalContextLimit": 2500
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"<repo-root>/tools/agentharbor-connector/connector.py\" hook",
+            "commandWindows": "py -3 \"<repo-root>\\tools\\agentharbor-connector\\connector.py\" hook",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"<repo-root>/tools/agentharbor-connector/connector.py\" hook",
+            "commandWindows": "py -3 \"<repo-root>\\tools\\agentharbor-connector\\connector.py\" hook",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}
