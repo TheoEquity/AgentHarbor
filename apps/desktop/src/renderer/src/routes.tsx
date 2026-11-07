@@ -15,7 +15,7 @@ import {
 import { AttachmentPreviewRoute } from "./pages/attachment-preview-page";
 import { IssuesPage } from "@multica/views/issues/components";
 import { ProjectsPage } from "@multica/views/projects/components";
-import { AgentTasksPage } from "@multica/views/agentharbor";
+import { AgentTasksPage, ProjectMemoryPage } from "@multica/views/agentharbor";
 import { DashboardPage } from "@multica/views/dashboard";
 import { AutopilotsPage } from "@multica/views/autopilots/components";
 import { MyIssuesPage } from "@multica/views/my-issues";
@@ -172,6 +172,11 @@ export const appRoutes: RouteObject[] = [
             path: "agent-tasks",
             element: <AgentTasksPage />,
             handle: { title: "Agent tasks" },
+          },
+          {
+            path: "memory",
+            element: <ProjectMemoryPage />,
+            handle: { title: "Project memory" },
           },
           {
             path: "projects/:id",

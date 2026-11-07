@@ -38,6 +38,7 @@ const PAGE_KEYWORDS: Record<WorkspacePageKey, string[]> = {
   myIssues: ["my", "issues", "assigned", "mine", "我的", "任务"],
   issues: ["issues", "tasks", "bugs", "任务"],
   agentTasks: ["agent tasks", "machines", "sessions", "智能体任务", "机器"],
+  projectMemory: ["project memory", "memory", "项目记忆", "记忆"],
   views: ["views", "saved", "filters", "视图", "筛选"],
   projects: ["projects", "kanban", "项目"],
   autopilots: ["autopilot", "autopilots", "automation", "schedule", "cron", "webhook", "自动化", "定时"],

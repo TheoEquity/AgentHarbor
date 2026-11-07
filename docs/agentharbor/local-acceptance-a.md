@@ -19,6 +19,8 @@
 
 网页增补复核：从 `app/` 构建并启动前端，访问工作区的 `/agent-tasks` 页面。点击「智能体任务」菜单后，页面从真实 API 展示验收项目、机器 `Jacobin`、`Codex`、`本轮结束 · 完成未知`、事件发生时间和服务端接收时间；未使用页面模拟数据。前端生产构建及 TypeScript 检查通过，新增 API 边界与页面测试通过。网页每 30 秒重新读取已同步记录，页面明确说明不是实时状态。
 
+项目记忆网页复核：从同一前端打开工作区的 `/memory` 页面，选择验收项目后读到 MemoryCore 中原有的 L3 文档，长度 133 个字符；L0–L2 明确显示尚未接入，未填入原型样例。页面提供 L3 整份文档的手动编辑入口；保存交互由组件测试覆盖，本次没有改写验收记忆。
+
 ## 使用方式
 
 1. 在独立目录检出 TencentDB-Agent-Memory 的 `feat/server_team` 分支并固定到 `2002196f`。进入其 `MemoryCore` 目录，安装依赖，按 `tdai-gateway.standalone.yaml` 启动 Gateway。为 `TDAI_DATA_DIR`、`TDAI_METADATA_SQLITE_BASE_DIR` 指定持久化目录，设置 `TDAI_GATEWAY_API_KEY`。本机仅验收手工 L3 写读时可使用不连接外部模型的测试 LLM 地址；自动提炼需要真实可用的模型配置。
@@ -33,4 +35,4 @@
 - B 机真实 Codex 取回并使用 A 项目记忆（M04 的跨机部分）。
 - 完整 L0–L3 记忆管理；本机阶段只实现 L3 手工写读。网页任务菜单已完成本机单项目记录展示，双机展示仍待 B 机验收。
 
-本次另核对：连接程序 loopback 测试 3/3 通过；MemoryCore Go 客户端测试通过。服务端 worker 报告在全新 PostgreSQL 上迁移到 618，并通过 3 项数据库与 PAT 路由测试；主分支已通过上表的真实 HTTP 闭环，未独立重跑 worker 的全部数据库测试。完整后端测试集、前端构建和 B 机验收未运行。
+本次另核对：连接程序 loopback 测试 3/3 通过；MemoryCore Go 客户端测试通过。服务端 worker 报告在全新 PostgreSQL 上迁移到 618，并通过 3 项数据库与 PAT 路由测试；主分支已通过上表的真实 HTTP 闭环，未独立重跑 worker 的全部数据库测试。前端生产构建、core/views/desktop 类型检查、相关 API 与页面测试通过；完整后端测试集和 B 机验收未运行。

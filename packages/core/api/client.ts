@@ -261,7 +261,7 @@ import { type Logger, noopLogger } from "../logger";
 import { createRequestId, createSafeId } from "../utils";
 import { getCurrentSlug } from "../platform/workspace-storage";
 import { parseWithFallback } from "./schema";
-import type { AgentHarborTasksResponse } from "./schemas";
+import type { AgentHarborMemorySnapshot, AgentHarborTasksResponse } from "./schemas";
 import {
   RuntimeProfileSchema,
   RuntimeProfileListSchema,
@@ -353,6 +353,7 @@ import {
   ProjectSchema,
   ListProjectsResponseSchema,
   AgentHarborTasksResponseSchema,
+  AgentHarborMemorySnapshotSchema,
   EMPTY_PROJECT,
   EMPTY_LIST_PROJECTS_RESPONSE,
   SearchProjectsResponseSchema,
@@ -4235,6 +4236,29 @@ export class ApiClient {
     return parseWithFallback(raw, AgentHarborTasksResponseSchema, { tasks: [] }, {
       endpoint: "GET /api/agentharbor/tasks",
     });
+  }
+
+  async getAgentHarborMemory(projectId: string): Promise<AgentHarborMemorySnapshot> {
+    const raw = await this.fetch<unknown>(`/api/projects/${encodeURIComponent(projectId)}/memory-snapshot`);
+    const snapshot = parseWithFallback<AgentHarborMemorySnapshot | null>(
+      raw, AgentHarborMemorySnapshotSchema, null,
+      { endpoint: "GET /api/projects/:id/memory-snapshot" },
+    );
+    if (!snapshot) throw new Error("Invalid project memory response");
+    return snapshot;
+  }
+
+  async putAgentHarborMemory(projectId: string, content: string): Promise<AgentHarborMemorySnapshot> {
+    const raw = await this.fetch<unknown>(`/api/projects/${encodeURIComponent(projectId)}/memory/core`, {
+      method: "PUT",
+      body: JSON.stringify({ content }),
+    });
+    const snapshot = parseWithFallback<AgentHarborMemorySnapshot | null>(
+      raw, AgentHarborMemorySnapshotSchema, null,
+      { endpoint: "PUT /api/projects/:id/memory/core" },
+    );
+    if (!snapshot) throw new Error("Invalid project memory response");
+    return snapshot;
   }
 
   async getProject(id: string): Promise<Project> {

@@ -14,3 +14,15 @@ export function agentHarborTasksOptions(wsId: string, projectId: string) {
     refetchInterval: 30_000,
   });
 }
+
+export const agentHarborMemoryKeys = {
+  project: (wsId: string, projectId: string) => ["agentharbor-memory", wsId, projectId] as const,
+};
+
+export function agentHarborMemoryOptions(wsId: string, projectId: string) {
+  return queryOptions({
+    queryKey: agentHarborMemoryKeys.project(wsId, projectId),
+    queryFn: () => api.getAgentHarborMemory(projectId),
+    refetchInterval: 30_000,
+  });
+}

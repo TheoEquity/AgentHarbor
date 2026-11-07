@@ -10,7 +10,7 @@ import { projectSidebarSource, sidebarProjects } from "@multica/core/issues/side
 import { useSidebarProjectPrefs } from "@multica/core/issues/sidebar-project-prefs";
 import { useSidebarKeptStore } from "@multica/core/issues/stores/sidebar-kept-store";
 import { useSidebarTreeStore } from "@multica/core/issues/stores/sidebar-tree-store";
-import { Monitor } from "@multica/ui/icons";
+import { BookOpenText, Monitor } from "@multica/ui/icons";
 import { projectListOptions } from "@multica/core/projects/queries";
 import type { Project } from "@multica/core/types";
 import { useNavigation } from "../../navigation";
@@ -150,6 +150,12 @@ export function WorkPanel() {
                 label={t(($) => $.nav.agent_tasks)}
                 icon={<Monitor />}
                 active={isPathWithin(pathname, p.agentTasks())}
+              />
+              <PanelLink
+                href={p.projectMemory()}
+                label={t(($) => $.nav.project_memory)}
+                icon={<BookOpenText />}
+                active={isPathWithin(pathname, p.projectMemory())}
               />
             </PanelList>
           )}

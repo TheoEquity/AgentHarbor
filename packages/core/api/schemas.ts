@@ -1627,6 +1627,14 @@ export const AgentHarborTasksResponseSchema = z.object({
 export type AgentHarborTask = z.infer<typeof AgentHarborTaskSchema>;
 export type AgentHarborTasksResponse = z.infer<typeof AgentHarborTasksResponseSchema>;
 
+export const AgentHarborMemorySnapshotSchema = z.object({
+  project_id: z.string(),
+  version: z.string().default(""),
+  content: z.string().default(""),
+}).loose();
+
+export type AgentHarborMemorySnapshot = z.infer<typeof AgentHarborMemorySnapshotSchema>;
+
 const SearchProjectResultSchema = ProjectSchema.extend({
   match_source: z.string(),
   matched_snippet: z.string().optional(),

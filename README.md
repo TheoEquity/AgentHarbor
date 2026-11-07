@@ -6,7 +6,7 @@ Personal cloud dashboard for multi-machine agent tasks and shared project memory
 - A local Codex connector records task events and syncs them in batches every 30 seconds.
 - The server stores project, machine, agent, and session task records and supports readback to the connector.
 - The web task menu shows which machine and agent worked on each project.
-- Project memory can be maintained in Tencent MemoryCore and retrieved by the connector.
+- The project memory page reads and edits the actual L3 document in Tencent MemoryCore; L0–L2 are not connected yet.
 
 The local A-machine flow has been checked. Connecting a second machine is the next acceptance step.
 

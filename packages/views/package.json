@@ -10,7 +10,7 @@
   },
   "exports": {
     "./navigation": "./navigation/index.ts",
-    "./agentharbor": "./agentharbor/agent-tasks-page.tsx",
+    "./agentharbor": "./agentharbor/index.ts",
     "./common/actor-avatar": "./common/actor-avatar.tsx",
     "./common/cli-install-command": "./common/cli-install-command.tsx",
     "./common/shortcut-keycaps": "./common/shortcut-keycaps.tsx",
