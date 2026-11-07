@@ -1704,6 +1704,11 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 		})
 	})
 
+	// Memory-only bearer tokens carry their own project binding and cannot be
+	// authenticated by the general user/PAT middleware.
+	r.Get("/api/agentharbor/project-memory", h.GetScopedAgentHarborMemory)
+	r.Post("/api/agentharbor/project-memory", h.AppendScopedAgentHarborMemory)
+
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Auth(queries, patCache, cloudPATVerifier, cfSigner))
 		r.Use(middleware.RefreshCloudFrontCookies(cfSigner))
@@ -2246,6 +2251,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 					r.Put("/", h.UpdateProject)
 					r.Delete("/", h.DeleteProject)
 					r.With(handler.RequireHumanActor).Put("/memory/core", h.PutAgentHarborCoreMemory)
+					r.With(handler.RequireHumanActor).Post("/memory/access-token", h.IssueAgentHarborMemoryToken)
 					r.Get("/memory-snapshot", h.GetAgentHarborMemorySnapshot)
 					r.Post("/workflow", h.SetProjectWorkflow)
 					r.Get("/resources", h.ListProjectResources)
