@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
@@ -30,6 +32,11 @@ jobs:
 
       - name: Build, type check, and lint
         run: pnpm exec turbo build typecheck lint --filter='!@multica/docs' --filter='!@multica/mobile'
+
+      - name: Review changed frontend code
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'parent' }}
+        run: node scripts/check-changed-code.mjs frontend "$BASE_SHA" "$GITHUB_SHA"
 
       - name: Test frontend
         env:
@@ -70,11 +77,21 @@ jobs:
       GOFLAGS: -count=1
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
       - uses: actions/setup-go@v5
         with:
           go-version: "~1.27.3"
           check-latest: true
           cache-dependency-path: server/go.sum
+
+      - name: Check changed Go code
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || 'parent' }}
+        run: node scripts/check-changed-code.mjs backend "$BASE_SHA" "$GITHUB_SHA"
 
       - name: Verify generated SQL
         run: |
