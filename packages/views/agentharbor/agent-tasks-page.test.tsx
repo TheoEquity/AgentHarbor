@@ -33,9 +33,10 @@ describe("Agent tasks page", () => {
     });
     qc.setQueryData(agentHarborTasksOptions("ws-1", "project").queryKey, {
       tasks: [{
-        project_id: "project", machine_id: "machine", machine_name: "Jacobin",
-        agent_type: "codex", session_id: "session-123", status: "turn_ended_unknown",
-        last_occurred_at: "2026-11-07T16:41:39Z", last_received_at: "2026-11-07T16:42:14Z",
+        projectId: "project", machineId: "machine", machineName: "Jacobin",
+        agentType: "codex", sessionId: "session-123", status: "turn_ended_unknown",
+        lastOccurredAt: "2026-11-07T16:41:39Z", lastReceivedAt: "2026-11-07T16:42:14Z",
+        events: [],
       }],
     });
 

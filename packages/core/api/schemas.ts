@@ -1609,6 +1609,32 @@ export const ListProjectsResponseSchema = z.object({
 
 export const EMPTY_LIST_PROJECTS_RESPONSE: ListProjectsResponse = { projects: [], total: 0 };
 
+export const AgentHarborEventSchema = z.object({
+  event_id: z.string(),
+  machine_id: z.string(),
+  project_id: z.string(),
+  agent_type: z.string(),
+  session_id: z.string(),
+  turn_id: z.string(),
+  local_seq: z.number(),
+  event_type: z.string(),
+  occurred_at: z.string(),
+  received_at: z.string(),
+  evidence: z.string(),
+}).loose().transform((event) => ({
+  eventId: event.event_id,
+  machineId: event.machine_id,
+  projectId: event.project_id,
+  agentType: event.agent_type,
+  sessionId: event.session_id,
+  turnId: event.turn_id,
+  localSeq: event.local_seq,
+  eventType: event.event_type,
+  occurredAt: event.occurred_at,
+  receivedAt: event.received_at,
+  evidence: event.evidence,
+}));
+
 export const AgentHarborTaskSchema = z.object({
   project_id: z.string(),
   machine_id: z.string(),
@@ -1618,12 +1644,24 @@ export const AgentHarborTaskSchema = z.object({
   status: z.string().default("unknown"),
   last_occurred_at: z.string().default(""),
   last_received_at: z.string().default(""),
-}).loose();
+  events: z.array(AgentHarborEventSchema).default([]).catch([]),
+}).loose().transform((task) => ({
+  projectId: task.project_id,
+  machineId: task.machine_id,
+  machineName: task.machine_name,
+  agentType: task.agent_type,
+  sessionId: task.session_id,
+  status: task.status,
+  lastOccurredAt: task.last_occurred_at,
+  lastReceivedAt: task.last_received_at,
+  events: task.events,
+}));
 
 export const AgentHarborTasksResponseSchema = z.object({
   tasks: z.array(AgentHarborTaskSchema).default([]),
 }).loose();
 
+export type AgentHarborEvent = z.infer<typeof AgentHarborEventSchema>;
 export type AgentHarborTask = z.infer<typeof AgentHarborTaskSchema>;
 export type AgentHarborTasksResponse = z.infer<typeof AgentHarborTasksResponseSchema>;
 
@@ -1631,7 +1669,11 @@ export const AgentHarborMemorySnapshotSchema = z.object({
   project_id: z.string(),
   version: z.string().default(""),
   content: z.string().default(""),
-}).loose();
+}).loose().transform((snapshot) => ({
+  projectId: snapshot.project_id,
+  version: snapshot.version,
+  content: snapshot.content,
+}));
 
 export type AgentHarborMemorySnapshot = z.infer<typeof AgentHarborMemorySnapshotSchema>;
 

@@ -27,10 +27,10 @@ describe("Project memory page", () => {
       }], total: 1,
     });
     qc.setQueryData(agentHarborMemoryOptions("ws-1", "project").queryKey, {
-      project_id: "project", version: "v1", content: "Confirmed project rule",
+      projectId: "project", version: "v1", content: "Confirmed project rule",
     });
     vi.mocked(api.putAgentHarborMemory).mockResolvedValue({
-      project_id: "project", version: "v2", content: "Updated project rule",
+      projectId: "project", version: "v2", content: "Updated project rule",
     });
 
     renderWithI18n(<QueryClientProvider client={qc}><ProjectMemoryPage /></QueryClientProvider>);

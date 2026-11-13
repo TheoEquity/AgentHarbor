@@ -32,7 +32,7 @@ export function AgentTasksPage() {
   const rows = projects.flatMap((project, index) =>
     (taskQueries[index]?.data?.tasks ?? []).map((task) => ({ project, task })),
   ).sort((a, b) =>
-    (Date.parse(b.task.last_received_at) || 0) - (Date.parse(a.task.last_received_at) || 0),
+    (Date.parse(b.task.lastReceivedAt) || 0) - (Date.parse(a.task.lastReceivedAt) || 0),
   );
   const loading = projectQuery.isPending || taskQueries.some((query) => query.isPending);
   const error = projectQuery.isError || taskQueries.some((query) => query.isError);
@@ -101,20 +101,20 @@ export function AgentTasksPage() {
               </thead>
               <tbody>
                 {rows.map(({ project, task }) => (
-                  <tr key={`${project.id}/${task.machine_id}/${task.agent_type}/${task.session_id}`} className="border-t border-surface-border align-top">
+                  <tr key={`${project.id}/${task.machineId}/${task.agentType}/${task.sessionId}`} className="border-t border-surface-border align-top">
                     <td className="px-4 py-3 font-medium">
                       <AppLink href={paths.projectDetail(project.id)} className="hover:underline focus-visible:outline-2 focus-visible:outline-ring">
                         {project.title}
                       </AppLink>
                     </td>
-                    <td className="px-4 py-3" title={task.machine_id}>{task.machine_name || task.machine_id.slice(0, 8)}</td>
+                    <td className="px-4 py-3" title={task.machineId}>{task.machineName || task.machineId.slice(0, 8)}</td>
                     <td className="px-4 py-3">
-                      <span className="block">{task.agent_type === "codex" ? "Codex" : task.agent_type}</span>
-                      <span className="block text-caption text-muted-foreground" title={task.session_id}>{task.session_id.slice(0, 8)}</span>
+                      <span className="block">{task.agentType === "codex" ? "Codex" : task.agentType}</span>
+                      <span className="block text-caption text-muted-foreground" title={task.sessionId}>{task.sessionId.slice(0, 8)}</span>
                     </td>
                     <td className="px-4 py-3"><span className="inline-block rounded-full bg-surface-hover px-2 py-0.5 text-caption">{statusLabel(task)}</span></td>
-                    <td className="whitespace-nowrap px-4 py-3"><time dateTime={task.last_occurred_at}>{formatTime(task.last_occurred_at)}</time></td>
-                    <td className="whitespace-nowrap px-4 py-3"><time dateTime={task.last_received_at}>{formatTime(task.last_received_at)}</time></td>
+                    <td className="whitespace-nowrap px-4 py-3"><time dateTime={task.lastOccurredAt}>{formatTime(task.lastOccurredAt)}</time></td>
+                    <td className="whitespace-nowrap px-4 py-3"><time dateTime={task.lastReceivedAt}>{formatTime(task.lastReceivedAt)}</time></td>
                   </tr>
                 ))}
               </tbody>
