@@ -1417,6 +1417,10 @@ func (h *Handler) DeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 			run:  func() error { return qtx.DeleteAgentHarborEventsByWorkspace(ctx, requester.WorkspaceID) },
 		},
 		{
+			name: "delete agentharbor memory",
+			run:  func() error { return deleteAgentHarborWorkspaceMemory(ctx, qtx, requester.WorkspaceID) },
+		},
+		{
 			name: "delete runtimes and projects",
 			run:  func() error { return qtx.DeleteWorkspaceRuntimesAndProjects(ctx, requester.WorkspaceID) },
 		},

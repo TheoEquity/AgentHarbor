@@ -1706,8 +1706,11 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 
 	// Memory-only bearer tokens carry their own project binding and cannot be
 	// authenticated by the general user/PAT middleware.
-	r.Get("/api/agentharbor/project-memory", h.GetScopedAgentHarborMemory)
-	r.Post("/api/agentharbor/project-memory", h.AppendScopedAgentHarborMemory)
+	r.Get("/api/agentharbor/project-memory", h.GetScopedAgentHarborMemoryContext)
+	r.Post("/api/agentharbor/project-memory", h.RejectAgentHarborLegacyMemoryWrite)
+	r.Post("/api/agentharbor/memory/materials", h.SubmitAgentHarborMemoryMaterial)
+	r.Get("/api/agentharbor/memory/entries", h.ListScopedAgentHarborMemoryEntries)
+	r.Get("/api/agentharbor/memory/context", h.GetScopedAgentHarborMemoryContext)
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Auth(queries, patCache, cloudPATVerifier, cfSigner))
@@ -2250,9 +2253,20 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 					r.Get("/", h.GetProject)
 					r.Put("/", h.UpdateProject)
 					r.Delete("/", h.DeleteProject)
-					r.With(handler.RequireHumanActor).Put("/memory/core", h.PutAgentHarborCoreMemory)
+					r.With(handler.RequireHumanActor).Put("/memory/core", h.RejectAgentHarborLegacyMemoryWrite)
 					r.With(handler.RequireHumanActor).Post("/memory/access-token", h.IssueAgentHarborMemoryToken)
 					r.Get("/memory-snapshot", h.GetAgentHarborMemorySnapshot)
+					r.Route("/memory", func(r chi.Router) {
+						r.Use(handler.RequireHumanActor)
+						r.Get("/materials", h.ListAgentHarborMemoryMaterials)
+						r.Post("/import-legacy", h.ImportAgentHarborLegacyMemory)
+						r.Patch("/materials/{materialId}", h.ReviewAgentHarborMemoryMaterial)
+						r.Get("/entries", h.ListAgentHarborMemoryEntries)
+						r.Patch("/entries/{entryId}", h.UpdateAgentHarborMemoryEntry)
+						r.Get("/entries/{entryId}/history", h.GetAgentHarborMemoryHistory)
+						r.Get("/settings", h.GetAgentHarborMemorySettings)
+						r.Put("/settings", h.PutAgentHarborMemorySettings)
+					})
 					r.Post("/workflow", h.SetProjectWorkflow)
 					r.Get("/resources", h.ListProjectResources)
 					r.Post("/resources", h.CreateProjectResource)

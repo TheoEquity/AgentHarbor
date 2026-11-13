@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -11,12 +12,17 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/multica-ai/multica/server/pkg/db/generated"
 )
 
-const agentHarborSyncBodyLimit = 256 * 1024
+const (
+	agentHarborSyncBodyLimit           = 256 * 1024
+	agentHarborMemoryReadEvent         = "memory_read"
+	agentHarborMemoryReadEvidenceLimit = 8192
+)
 
 type agentHarborMachine struct {
 	ID   string `json:"id"`
@@ -114,7 +120,18 @@ func (h *Handler) SyncAgentHarborEvents(w http.ResponseWriter, r *http.Request) 
 		}
 		if eventMachineID != machineID || event.AgentType != "codex" ||
 			strings.TrimSpace(event.SessionID) == "" || event.LocalSeq <= 0 || event.OccurredAt.IsZero() ||
-			utf8.RuneCountInString(event.Evidence) > 512 || !validAgentHarborEventType(event.EventType) {
+			!validAgentHarborEventType(event.EventType) {
+			writeError(w, http.StatusBadRequest, "invalid agentharbor event")
+			return
+		}
+		if event.EventType == agentHarborMemoryReadEvent {
+			evidence, valid := agentHarborMemoryReadEvidence(event.Evidence)
+			if !valid {
+				writeError(w, http.StatusBadRequest, "invalid agentharbor startup memory receipt")
+				return
+			}
+			event.Evidence = evidence
+		} else if utf8.RuneCountInString(event.Evidence) > 512 {
 			writeError(w, http.StatusBadRequest, "invalid agentharbor event")
 			return
 		}
@@ -190,11 +207,66 @@ func (h *Handler) SyncAgentHarborEvents(w http.ResponseWriter, r *http.Request) 
 
 func validAgentHarborEventType(eventType string) bool {
 	switch eventType {
-	case "prompt_started", "turn_stopped", "interrupted":
+	case "prompt_started", "turn_stopped", "interrupted", agentHarborMemoryReadEvent:
 		return true
 	default:
 		return false
 	}
+}
+
+func agentHarborMemoryReadEvidence(value string) (string, bool) {
+	type entryRef struct {
+		ID       uuid.UUID `json:"id"`
+		Revision int32     `json:"revision"`
+	}
+	var receipt struct {
+		Trigger        string     `json:"trigger"`
+		Fetched        *bool      `json:"fetched"`
+		Emitted        *bool      `json:"emitted"`
+		ContextEmitted *bool      `json:"context_emitted"`
+		Version        *string    `json:"version"`
+		Entries        []entryRef `json:"entries"`
+	}
+	if len(value) > agentHarborMemoryReadEvidenceLimit {
+		return "", false
+	}
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&receipt); err != nil {
+		return "", false
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return "", false
+	}
+	if receipt.Trigger != "startup" || receipt.Fetched == nil || receipt.Emitted == nil ||
+		receipt.ContextEmitted == nil || receipt.Version == nil || receipt.Entries == nil || len(receipt.Entries) > 100 {
+		return "", false
+	}
+	if len(receipt.Entries) == 0 {
+		if *receipt.Version != "" || *receipt.ContextEmitted {
+			return "", false
+		}
+	} else {
+		version := *receipt.Version
+		if !*receipt.Fetched || len(version) != 64 || strings.ToLower(version) != version {
+			return "", false
+		}
+		if _, err := hex.DecodeString(version); err != nil {
+			return "", false
+		}
+	}
+	if *receipt.ContextEmitted && !*receipt.Emitted {
+		return "", false
+	}
+	seen := make(map[uuid.UUID]bool, len(receipt.Entries))
+	for _, entry := range receipt.Entries {
+		if entry.ID == uuid.Nil || entry.Revision <= 0 || seen[entry.ID] {
+			return "", false
+		}
+		seen[entry.ID] = true
+	}
+	normalized, err := json.Marshal(receipt)
+	return string(normalized), err == nil
 }
 
 func agentHarborStatus(eventType string) string {
@@ -262,7 +334,7 @@ func (h *Handler) ListAgentHarborTasks(w http.ResponseWriter, r *http.Request) {
 			EventType: row.EventType, OccurredAt: row.OccurredAt.Time,
 			ReceivedAt: row.ReceivedAt.Time, Evidence: row.Evidence,
 		})
-		if row.LocalSeq > latestSeq[key] {
+		if row.EventType != agentHarborMemoryReadEvent && row.LocalSeq > latestSeq[key] {
 			latestSeq[key] = row.LocalSeq
 			task.MachineName = row.MachineName
 			task.Status = agentHarborStatus(row.EventType)
@@ -270,5 +342,11 @@ func (h *Handler) ListAgentHarborTasks(w http.ResponseWriter, r *http.Request) {
 			task.LastReceivedAt = row.ReceivedAt.Time
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"tasks": tasks})
+	visible := tasks[:0]
+	for _, task := range tasks {
+		if task.Status != "" {
+			visible = append(visible, task)
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"tasks": visible})
 }

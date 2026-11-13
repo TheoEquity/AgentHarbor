@@ -205,6 +205,62 @@ type AgentharborEvent struct {
 	Evidence    string             `json:"evidence"`
 }
 
+type AgentharborMemoryEntry struct {
+	ID                pgtype.UUID        `json:"id"`
+	WorkspaceID       pgtype.UUID        `json:"workspace_id"`
+	ProjectID         pgtype.UUID        `json:"project_id"`
+	OwnerID           pgtype.UUID        `json:"owner_id"`
+	Scope             string             `json:"scope"`
+	Type              string             `json:"type"`
+	Title             string             `json:"title"`
+	Content           string             `json:"content"`
+	Status            string             `json:"status"`
+	Revision          int32              `json:"revision"`
+	SourceMaterialIds []pgtype.UUID      `json:"source_material_ids"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+}
+
+type AgentharborMemoryMaterial struct {
+	ID              pgtype.UUID        `json:"id"`
+	WorkspaceID     pgtype.UUID        `json:"workspace_id"`
+	ProjectID       pgtype.UUID        `json:"project_id"`
+	SubmittedBy     pgtype.UUID        `json:"submitted_by"`
+	RequestID       pgtype.UUID        `json:"request_id"`
+	SourceText      string             `json:"source_text"`
+	Context         string             `json:"context"`
+	SessionID       string             `json:"session_id"`
+	TurnID          string             `json:"turn_id"`
+	RelatedEntryID  pgtype.UUID        `json:"related_entry_id"`
+	RelatedRevision pgtype.Int4        `json:"related_revision"`
+	Status          string             `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ReviewedBy      pgtype.UUID        `json:"reviewed_by"`
+	ReviewedAt      pgtype.Timestamptz `json:"reviewed_at"`
+}
+
+type AgentharborMemoryRevision struct {
+	EntryID           pgtype.UUID        `json:"entry_id"`
+	Revision          int32              `json:"revision"`
+	WorkspaceID       pgtype.UUID        `json:"workspace_id"`
+	ProjectID         pgtype.UUID        `json:"project_id"`
+	Type              string             `json:"type"`
+	Title             string             `json:"title"`
+	Content           string             `json:"content"`
+	Status            string             `json:"status"`
+	SourceMaterialIds []pgtype.UUID      `json:"source_material_ids"`
+	ChangedBy         pgtype.UUID        `json:"changed_by"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+}
+
+type AgentharborMemorySetting struct {
+	ProjectID     pgtype.UUID `json:"project_id"`
+	WorkspaceID   pgtype.UUID `json:"workspace_id"`
+	RecordEnabled bool        `json:"record_enabled"`
+	CloudEnabled  bool        `json:"cloud_enabled"`
+	UseMemory     bool        `json:"use_memory"`
+	UseGlobal     bool        `json:"use_global"`
+}
+
 type Attachment struct {
 	ID              pgtype.UUID        `json:"id"`
 	WorkspaceID     pgtype.UUID        `json:"workspace_id"`
