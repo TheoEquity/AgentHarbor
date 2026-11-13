@@ -32,7 +32,9 @@ jobs:
         run: pnpm exec turbo build typecheck lint --filter='!@multica/docs' --filter='!@multica/mobile'
 
       - name: Test frontend
-        run: pnpm exec turbo test --concurrency=1 --filter='!@multica/docs' --filter='!@multica/mobile'
+        env:
+          VITEST_MAX_WORKERS: 4
+        run: pnpm exec turbo test --concurrency=1 --env-mode=loose --filter='!@multica/docs' --filter='!@multica/mobile'
 
       - name: Check frontend quality
         uses: ./.github/actions/frontend-quality
