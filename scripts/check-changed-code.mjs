@@ -8,6 +8,7 @@ const [scope, base, head] = process.argv.slice(2);
 const workspaces = ["packages/core", "packages/ui", "packages/views", "packages/plugin-sdk", "apps/web", "apps/desktop"];
 const maxLines = 500;
 const maxComplexity = 20;
+const maxNesting = 3;
 
 if (!["frontend", "backend"].includes(scope) || !base || !head) {
   throw new Error("Usage: node scripts/check-changed-code.mjs <frontend|backend> <base> <head>");
@@ -25,9 +26,10 @@ const range = /^0+$/.test(base)
 const changed = git("diff", "--name-only", "--diff-filter=ACMRT", "-z", ...range, "--")
   .split("\0").filter((file) => file && lstatSync(resolve(root, file)).isFile());
 
-function warning(file, message) {
+function warning(file, message, line) {
   const escape = (value, pattern) => value.replace(pattern, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
-  console.log(`::warning file=${escape(file, /[%\r\n,:]/g)}::${escape(message, /[%\r\n]/g)}`);
+  const location = line ? `,line=${line}` : "";
+  console.log(`::warning file=${escape(file, /[%\r\n,:]/g)}${location}::${escape(message, /[%\r\n]/g)}`);
 }
 
 function businessSource(file, source) {
@@ -53,15 +55,25 @@ function run(command, args, cwd) {
 
 if (scope === "backend") {
   const files = changed.filter((file) => file.startsWith("server/") && file.endsWith(".go"));
+  const businessFiles = [];
   for (const file of files) {
     const source = readFileSync(resolve(root, file), "utf8");
-    if (businessSource(file, source)) warnAboutSize(file, source);
+    if (businessSource(file, source)) {
+      warnAboutSize(file, source);
+      businessFiles.push(file);
+    }
   }
   if (files.length) {
     const unformatted = run("gofmt", ["-l", ...files.map((file) => `./${file}`)], root);
     if (unformatted) {
       console.error(`Run gofmt on these changed Go files:\n${unformatted.trimEnd()}`);
       process.exitCode = 1;
+    }
+  }
+  if (businessFiles.length) {
+    const output = run("go", ["run", "./scripts/check-go-nesting.go", String(maxNesting), ...businessFiles], root);
+    for (const { file, line, depth } of JSON.parse(output)) {
+      warning(file, `Control flow is nested ${depth} levels deep (recommended maximum: ${maxNesting})`, line);
     }
   }
 } else {
@@ -77,14 +89,15 @@ if (scope === "backend") {
 
     const cwd = resolve(root, workspace);
     const output = run(process.execPath, [
-      resolve(root, "node_modules/eslint/bin/eslint.js"), "--no-warn-ignored", "--rule", `complexity: [warn, ${maxComplexity}]`,
+      resolve(root, "node_modules/eslint/bin/eslint.js"), "--no-warn-ignored",
+      "--rule", `complexity: [warn, ${maxComplexity}]`, "--rule", `max-depth: [warn, ${maxNesting}]`,
       "--format", "json", "--", ...files.map((file) => file.slice(workspace.length + 1)),
     ], cwd);
     for (const result of JSON.parse(output)) {
       for (const message of result.messages) {
-        if (message.ruleId !== "complexity") continue;
+        if (message.ruleId !== "complexity" && message.ruleId !== "max-depth") continue;
         const file = relative(root, result.filePath).split(sep).join("/");
-        warning(file, `Line ${message.line}: ${message.message}`);
+        warning(file, message.message, message.line);
       }
     }
   }
