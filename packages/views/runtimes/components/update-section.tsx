@@ -24,6 +24,7 @@ async function fetchLatestVersion(): Promise<string | null> {
     return cachedLatestVersion;
   }
   try {
+    // eslint-disable-next-line no-restricted-globals -- GitHub releases are external to the app API.
     const resp = await fetch(GITHUB_RELEASES_URL, {
       headers: { Accept: "application/vnd.github+json" },
     });

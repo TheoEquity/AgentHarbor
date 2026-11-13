@@ -1,4 +1,5 @@
 import reactConfig from "@multica/eslint-config/react";
+import { ICON_LIBRARY_IMPORT_PATTERNS } from "@multica/eslint-config/base";
 import i18next from "eslint-plugin-i18next";
 import {
   NO_UNTRANSLATED_ATTRIBUTES,
@@ -13,6 +14,20 @@ import {
 
 export default [
   ...reactConfig,
+  {
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        patterns: [
+          ...ICON_LIBRARY_IMPORT_PATTERNS,
+          {
+            regex: "^(?:next|react-router-dom)(?:/|$)",
+            message: "Use the shared navigation adapter from views.",
+          },
+        ],
+      }],
+    },
+  },
   {
     files: ["**/*.tsx"],
     ignores: ["**/*.test.tsx", "test/**"],
@@ -29,6 +44,10 @@ export default [
     files: ["**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}", "test/**"],
     rules: {
+      "no-restricted-globals": ["error", {
+        globals: [{ name: "fetch", message: "Use the shared core API client for app requests." }],
+        checkGlobalObject: true,
+      }],
       "no-restricted-syntax": [
         "error",
         NO_UNTRANSLATED_ATTRIBUTES,
