@@ -1,6 +1,6 @@
 # AgentHarbor 开发说明
 
-面向接手 AgentHarbor 的开发智能体。更新日期：2026-11-09。
+面向接手 AgentHarbor 的开发智能体。更新日期：2026-11-13。
 
 本文件所在的 `app/` 是开发代码根目录，上一级为 AgentHarbor 项目目录。后续读写、命令和验收从这里定位，不沿用其他 worktree 的路径。
 
@@ -15,7 +15,7 @@ AgentHarbor 先供个人使用，管理多台机器、多个项目和参与工�
 1. 用户在某台机器的项目目录中开始一个智能体会话。
 2. 本地连接程序记录项目、机器、智能体、会话及可取得的任务状态，定时批量同步。
 3. 用户在网页任务菜单查看哪个项目由哪台机器、哪个智能体处理，以及信息最后更新的时间。
-4. 智能体按需直接从服务端读取当前项目记忆，也能通过工具保存用户要求记住的内容。
+4. 智能体可主动提交待审核材料。网页审核后，后续会话可在启动时或按需读取有效记忆。
 5. 后续在另一台机器进入同项目时，可以读取已同步的任务背景与有效知识。
 
 云端负责记录、查看与共享。首版不增加远程派发、启动、停止或重跑智能体的工作台。项目代码仍由原有工作目录和 Git 仓库管理，不把整个目录上传当作任务同步的一部分。
@@ -36,21 +36,19 @@ AgentHarbor 先供个人使用，管理多台机器、多个项目和参与工�
 
 ## 3. 当前实现与代码入口
 
-以下为本次源码核对结果，未重新执行运行验收。
+以下为本地代码的行为。记忆流程已在 CIS 5480 的隔离测试环境中验证。
 
 | 范围 | 当前代码行为 | 入口 |
 | --- | --- | --- |
 | 本地采集 | Python 连接程序处理 Codex Hook，写本地队列；当前任务证据主要是文本长度等摘要信息，不上传完整对话正文 | [connector.py](tools/agentharbor-connector/connector.py) |
 | 任务同步 | 连接程序默认每 30 秒通过 HTTP 同步，按服务端确认的事件清理队列；这条链路不走 MCP | [任务处理](server/internal/handler/agentharbor.go) |
-| 任务页面 | 按项目汇总机器、智能体、会话标识、状态及时间；本轮结束不等于任务完成 | [任务视图](packages/views/agentharbor/agent-tasks-page.tsx) |
-| 网页记忆 | 读取、编辑和保存项目的整份核心记忆正文 | [记忆视图](packages/views/agentharbor/project-memory-page.tsx) |
-| 记忆 MCP | `read_project_memory` 直接读取项目正文；`write_project_memory` 追加一条内容，工具描述要求用户明确提出保存 | [memory_mcp.py](tools/agentharbor-connector/memory_mcp.py) |
-| 记忆后端 | AgentHarbor 按项目隔离访问腾讯 MemoryCore 的 L3 读写接口；当前版本标识由全文内容计算 | [处理器](server/internal/handler/agentharbor_memory.go)、[MemoryCore 客户端](server/internal/agentharbormemory/client.go) |
+| 任务页面 | 按项目汇总机器、智能体、会话标识、状态及时间，并展示启动记忆回执 | [任务视图](packages/views/agentharbor/agent-tasks-page.tsx) |
+| 网页记忆 | 审核、合并待审材料，管理项目或本人通用条目，追溯来源与版本 | [记忆视图](packages/views/agentharbor/project-memory-page.tsx) |
+| 记忆 MCP | `search_project_memory` 按需查找知识；`submit_project_memory_material` 主动提交待审材料，显式要求记住也走同一入口 | [memory_mcp.py](tools/agentharbor-connector/memory_mcp.py) |
+| 记忆后端 | PostgreSQL 保存材料、条目与修订。旧腾讯 L3 可作为待审核来源导入 | [处理器](server/internal/handler/agentharbor_memory_review.go)、[MemoryCore 客户端](server/internal/agentharbormemory/client.go) |
 | 前端查询 | 共享任务与记忆查询，沿用工作区隔离和 Query 缓存 | [queries.ts](packages/core/agentharbor/queries.ts) |
 
-现有连接程序还保留定时下载记忆缓存、通过 Hook 提供上下文的路径。它与 MCP 直接访问服务端是两条不同链路；不能把缓存更新当作按需云端读取已经生效。
-
-当前记忆接口的管理单位仍是每项目一份 L3 正文。独立条目、候选与有效状态、全局记忆、按内容检索及项目启停控制，不能仅凭上游支持就标为 AgentHarbor 已完成。新会话自动取云端记忆也需要独立接入和验证。
+Codex 新会话通过启动 Hook 直接读取服务端的简短上下文。任务页回执记录读取结果、Hook 是否输出上下文，以及条目 ID 和版本。
 
 ## 4. 架构边界
 
@@ -68,7 +66,7 @@ AgentHarbor 在 Multica 底座上扩展，优先复用登录、工作区、项�
 
 ## 5. 下一阶段已确认的记忆方向
 
-这些是开发目标，不是当前接口能力声明。
+以下是记忆设计约定。已实现的入口见第 3 节。
 
 ### 5.1 分开收集材料与使用知识
 
@@ -77,7 +75,7 @@ AgentHarbor 在 Multica 底座上扩展，优先复用登录、工作区、项�
 - 用户明确要求记住的偏好、约束，以及核实的项目结构等，要有直接记录的路径；不要要求它们先伪装成一段历史经历。
 - 内容类型、是否生效、适用项目分别表达。不能把“语义记忆”或“L3”直接等同于已确认、已批准。
 
-具体采用人工确认、模型整理或哪些直接生效规则，按相应任务确定；不要自行增加“每条记忆都必须人工审批”的流程。
+本版由网页确认待审核材料后生效。
 
 ### 5.2 四类记忆各有职责
 
@@ -102,7 +100,7 @@ AgentHarbor 在 Multica 底座上扩展，优先复用登录、工作区、项�
 
 ### 5.4 上游选型保持明确
 
-当前实现使用腾讯 MemoryCore。用户允许对记忆子系统大修，但尚未决定替换为 Spector，也未批准同时运行两套记忆引擎。
+当前实现以 PostgreSQL 保存经审核的记忆。腾讯 MemoryCore 用于读取旧 L3，自动提炼留待后续评估。
 
 Spector 和腾讯的源码调研用于判断复用范围。上游的记忆类型、自动提炼、Skill 或权限能力，不等于 AgentHarbor 已经接入。选型未定时先说明依据、影响与待验证项，不直接实施替换或双写。
 

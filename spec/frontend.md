@@ -31,7 +31,7 @@ Web（Next.js，经同源代理）/ Desktop（Electron）
 
 - 沿用 REST/JSON 和 `packages/core/api/client.ts` 的 `fetch` 封装；Web 的 `/api/*` 经 Next.js 同源代理到 Go 服务。业务页面通过 `core` 的 API 与 Query 调用接口。
 - 请求的方法、路径、参数和 JSON 正文与后端约定；凭据、CSRF 和工作区标识交给现有 API 客户端处理，不由页面逐个拼装。
-- 响应在 `core` 边界用 Zod schema 与 `parseWithFallback` 校验，并为可选字段和未知枚举提供兼容处理。网络 JSON 使用 `snake_case`；AgentHarbor 的任务、事件和记忆快照在边界转换为 TypeScript 的 `camelCase` 字段。
+- 响应在 `core` 边界用 Zod schema 与 `parseWithFallback` 校验，并为可选字段和未知枚举提供兼容处理。网络 JSON 使用 `snake_case`；AgentHarbor 的任务、事件和记忆接口在边界转换为 TypeScript 的 `camelCase` 字段。
 - 非 2xx 响应由 API 客户端抛出带状态码和响应体的 `ApiError`；调用方按实际错误处理。新增或修改接口时同步更新 schema 和异常响应测试，并考虑已安装桌面端与较新服务端共存。
 
 从仓库根目录运行与改动范围相称的 `pnpm typecheck`、`pnpm lint`、`pnpm test`；具体要求以 [`AGENTS.md`](../AGENTS.md) 为准。
