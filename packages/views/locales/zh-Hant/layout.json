@@ -114,12 +114,6 @@
       "disabled": "已停用",
       "unknown": "未知狀態"
     },
-    "import_legacy": "匯入舊版記憶",
-    "legacy_imported": "舊版記憶已加入待處理清單。",
-    "legacy_empty": "沒有可匯入的舊版記憶。",
-    "legacy_unavailable": "暫時無法讀取舊版記憶。",
-    "legacy_error": "無法匯入舊版記憶",
-    "legacy_reviewed": "這份舊版記憶已經處理。",
     "choose_target": "選擇儲存位置",
     "stale_related_revision": "記錄這份素材後，關聯記憶已更新。請核對目前的版本，或選擇新增記憶。",
     "history": "版本記錄",

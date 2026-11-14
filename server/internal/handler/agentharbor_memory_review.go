@@ -414,10 +414,6 @@ func (h *Handler) UpdateAgentHarborMemoryEntry(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, row)
 }
 
-func (h *Handler) RejectAgentHarborLegacyMemoryWrite(w http.ResponseWriter, _ *http.Request) {
-	writeErrorCode(w, http.StatusGone, "memory_review_required", "submit a memory material and approve it in AgentHarbor")
-}
-
 func deleteAgentHarborProjectMemory(ctx context.Context, q *db.Queries, workspace, project pgtype.UUID) error {
 	if err := q.DeleteAgentHarborMemoryRevisionsByProject(ctx, db.DeleteAgentHarborMemoryRevisionsByProjectParams{WorkspaceID: workspace, ProjectID: project}); err != nil {
 		return err

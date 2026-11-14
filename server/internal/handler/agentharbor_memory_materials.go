@@ -3,11 +3,9 @@ package handler
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/multica-ai/multica/server/pkg/db/generated"
@@ -123,40 +121,6 @@ func readableRelatedMemoryEntry(w http.ResponseWriter, ctx context.Context, q *d
 		return false
 	}
 	return true
-}
-
-func (h *Handler) ImportAgentHarborLegacyMemory(w http.ResponseWriter, r *http.Request) {
-	scope, ok := h.browserMemoryScope(w, r)
-	if !ok {
-		return
-	}
-	if h.AgentHarborMemoryCore == nil {
-		writeError(w, http.StatusServiceUnavailable, "legacy MemoryCore is not configured")
-		return
-	}
-	projectID := uuid.UUID(scope.project.Bytes).String()
-	ctx := r.Context()
-	snapshot, err := h.AgentHarborMemoryCore.ReadCore(ctx, projectID)
-	if err != nil {
-		slog.Error("AgentHarbor legacy memory read failed", "error", err)
-		writeError(w, http.StatusServiceUnavailable, "legacy memory could not be read")
-		return
-	}
-	if strings.TrimSpace(snapshot.Content) == "" {
-		writeJSON(w, http.StatusOK, struct{}{})
-		return
-	}
-	// The same legacy project/version is imported once regardless of reviewer.
-	id := uuid.NewSHA1(uuid.NameSpaceOID, []byte("agentharbor-legacy-l3:"+projectID+":"+snapshot.Version))
-	row, _, ok := h.storeMemoryMaterial(w, ctx, scope, db.CreateAgentHarborMemoryMaterialParams{
-		WorkspaceID: scope.workspace, ProjectID: scope.project,
-		SubmittedBy: scope.project, RequestID: pgtype.UUID{Bytes: id, Valid: true},
-		SourceText: snapshot.Content, Context: "Imported MemoryCore L3, version " + snapshot.Version,
-	})
-	if ok {
-		writeJSON(w, http.StatusOK, map[string]any{"material": row})
-	}
-
 }
 
 func (h *Handler) ListAgentHarborMemoryMaterials(w http.ResponseWriter, r *http.Request) {

@@ -45,7 +45,7 @@ AgentHarbor 先供个人使用，管理多台机器、多个项目和参与工�
 | 任务页面 | 按项目汇总机器、智能体、会话标识、状态及时间，并展示启动记忆回执 | [任务视图](packages/views/agentharbor/agent-tasks-page.tsx) |
 | 网页记忆 | 审核、合并待审材料，管理项目或本人通用条目，追溯来源与版本 | [记忆视图](packages/views/agentharbor/project-memory-page.tsx) |
 | 记忆 MCP | `search_project_memory` 按需查找知识；`submit_project_memory_material` 主动提交待审材料，显式要求记住也走同一入口 | [memory_mcp.py](tools/agentharbor-connector/memory_mcp.py) |
-| 记忆后端 | PostgreSQL 保存材料、条目与修订。旧腾讯 L3 可作为待审核来源导入 | [处理器](server/internal/handler/agentharbor_memory_review.go)、[MemoryCore 客户端](server/internal/agentharbormemory/client.go) |
+| 记忆后端 | PostgreSQL 保存待审材料、有效条目与修订 | [处理器](server/internal/handler/agentharbor_memory_review.go) |
 | 前端查询 | 共享任务与记忆查询，沿用工作区隔离和 Query 缓存 | [queries.ts](packages/core/agentharbor/queries.ts) |
 
 Codex 新会话通过启动 Hook 直接读取服务端的简短上下文。任务页回执记录读取结果、Hook 是否输出上下文，以及条目 ID 和版本。
@@ -100,7 +100,7 @@ AgentHarbor 在 Multica 底座上扩展，优先复用登录、工作区、项�
 
 ### 5.4 上游选型保持明确
 
-当前实现以 PostgreSQL 保存经审核的记忆。腾讯 MemoryCore 用于读取旧 L3，自动提炼留待后续评估。
+当前实现以 PostgreSQL 保存待审材料和经审核的记忆。腾讯 MemoryCore 不再是运行依赖；自动提炼留待后续评估。
 
 Spector 和腾讯的源码调研用于判断复用范围。上游的记忆类型、自动提炼、Skill 或权限能力，不等于 AgentHarbor 已经接入。选型未定时先说明依据、影响与待验证项，不直接实施替换或双写。
 

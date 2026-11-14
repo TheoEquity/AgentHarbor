@@ -10,7 +10,6 @@ import (
 	"math"
 	"net/http"
 	"net/netip"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -19,7 +18,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/multica-ai/multica/server/internal/agentharbormemory"
 	"github.com/multica-ai/multica/server/internal/analytics"
 	"github.com/multica-ai/multica/server/internal/auth"
 	"github.com/multica-ai/multica/server/internal/cloudruntime"
@@ -219,7 +217,6 @@ type RuntimeRecoveryNotifier interface {
 
 type Handler struct {
 	Queries                *db.Queries
-	AgentHarborMemoryCore  *agentharbormemory.Client
 	ReadSelector           *dbreader.Selector
 	DB                     dbExecutor
 	TxStarter              txStarter
@@ -566,14 +563,6 @@ func New(queries *db.Queries, txStarter txStarter, hub *realtime.Hub, bus *event
 	h.PRRefresh = ghsnapshot.NewManager(ghClient, queries, txStarter, h.broadcastPRSnapshotApplied)
 	taskSvc.PRSnapshotsEnabled = h.PRRefresh.Enabled()
 
-	if memoryCoreURL := strings.TrimSpace(os.Getenv("AGENTHARBOR_MEMORYCORE_URL")); memoryCoreURL != "" {
-		memoryCore, err := agentharbormemory.NewClient(memoryCoreURL, os.Getenv("AGENTHARBOR_MEMORYCORE_API_KEY"), "default")
-		if err != nil {
-			slog.Error("AgentHarbor MemoryCore configuration invalid", "error", err)
-		} else {
-			h.AgentHarborMemoryCore = memoryCore
-		}
-	}
 	return h
 }
 

@@ -4,13 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/multica-ai/multica/server/internal/agentharbormemory"
 	"github.com/multica-ai/multica/server/internal/testutil"
 )
 
@@ -171,46 +169,4 @@ func TestAgentHarborMemoryReviewLifecycle(t *testing.T) {
 	call(testHandler.SubmitAgentHarborMemoryMaterial, scoped(http.MethodPost, project, map[string]string{
 		"request_id": uuid.NewString(), "source_text": "Recording can continue independently of retrieval.",
 	}), http.StatusCreated)
-}
-
-func TestAgentHarborLegacyImportStaysPendingAndDeduplicates(t *testing.T) {
-	project := dbfx.Project(t, "CIS 5480 legacy import")
-	source := "Legacy CIS 5480 notes"
-	legacy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body map[string]string
-		if r.URL.Path != "/v3/core/read" || json.NewDecoder(r.Body).Decode(&body) != nil || body["team_id"] != "ah-project-"+project {
-			t.Error("expected read-only legacy import scoped to its project")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]any{"code": 0, "data": map[string]string{"content": source}})
-	}))
-	defer legacy.Close()
-	client, err := agentharbormemory.NewClient(legacy.URL, "", "default")
-	if err != nil {
-		t.Fatal(err)
-	}
-	h := *testHandler
-	h.AgentHarborMemoryCore = client
-	t.Cleanup(func() {
-		dbfx.Exec(t, "DELETE FROM agentharbor_memory_material WHERE workspace_id = $1 AND project_id = $2", testWorkspaceID, project)
-	})
-	var imported struct {
-		Material struct {
-			ID, Status string
-			SourceText string `json:"source_text"`
-		}
-	}
-	importRequest := func() *http.Request {
-		return withURLParam(newRequest(http.MethodPost, "/", nil), "id", project)
-	}
-	testutil.Call(t, h.ImportAgentHarborLegacyMemory, importRequest()).Want(http.StatusOK).JSON(&imported)
-	id := imported.Material.ID
-	if id == "" || imported.Material.Status != "pending" || imported.Material.SourceText != source {
-		t.Fatalf("unexpected legacy import: %+v", imported)
-	}
-	testutil.Call(t, h.ImportAgentHarborLegacyMemory, importRequest()).Want(http.StatusOK).JSON(&imported)
-	if imported.Material.ID != id {
-		t.Fatalf("repeat import created a new material: %+v", imported)
-	}
 }

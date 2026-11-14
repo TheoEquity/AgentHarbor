@@ -367,7 +367,6 @@ import {
   AgentHarborMemoryEntriesSchema,
   AgentHarborMemoryEntrySchema,
   AgentHarborMemoryHistorySchema,
-  AgentHarborMemoryImportSchema,
   AgentHarborMemoryMaterialsSchema,
   AgentHarborMemoryReviewSchema,
   AgentHarborMemorySettingsSchema,
@@ -4266,19 +4265,6 @@ export class ApiClient {
     return snapshot;
   }
 
-  async putAgentHarborMemory(projectId: string, content: string): Promise<AgentHarborMemorySnapshot> {
-    const raw = await this.fetch<unknown>(`/api/projects/${encodeURIComponent(projectId)}/memory/core`, {
-      method: "PUT",
-      body: JSON.stringify({ content }),
-    });
-    const snapshot = parseWithFallback<AgentHarborMemorySnapshot | null>(
-      raw, AgentHarborMemorySnapshotSchema, null,
-      { endpoint: "PUT /api/projects/:id/memory/core" },
-    );
-    if (!snapshot) throw new Error("Invalid project memory response");
-    return snapshot;
-  }
-
   private async fetchAgentHarborMemory<T>(
     projectId: string,
     resource: string,
@@ -4300,14 +4286,6 @@ export class ApiClient {
       projectId, "materials", AgentHarborMemoryMaterialsSchema, "GET /api/projects/:id/memory/materials",
     );
     return materials;
-  }
-
-  async importAgentHarborLegacyMemory(projectId: string): Promise<AgentHarborMemoryMaterial | undefined> {
-    const { material } = await this.fetchAgentHarborMemory(
-      projectId, "import-legacy", AgentHarborMemoryImportSchema, "POST /api/projects/:id/memory/import-legacy",
-      { method: "POST" },
-    );
-    return material;
   }
 
   async reviewAgentHarborMemoryMaterial(

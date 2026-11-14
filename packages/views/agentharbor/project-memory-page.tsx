@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, api } from "@multica/core/api";
+import { api } from "@multica/core/api";
 import {
   agentHarborMemoryEntriesOptions,
   agentHarborMemoryKeys,
@@ -118,13 +118,6 @@ function ProjectMemory({ wsId, projectId }: { wsId: string; projectId: string })
     ]);
   }
 
-  const importLegacy = useMutation({
-    mutationFn: () => api.importAgentHarborLegacyMemory(projectId),
-    onSuccess: async (material) => {
-      if (material) await refreshMaterials();
-    },
-  });
-
   return (
     <Tabs defaultValue="pending" className="gap-4">
       <TabsList aria-label={t(($) => $.nav.project_memory)} className="max-w-full overflow-x-auto">
@@ -134,27 +127,6 @@ function ProjectMemory({ wsId, projectId }: { wsId: string; projectId: string })
         <TabsTrigger value="settings" className="px-3">{t(($) => $.project_memory.settings)}</TabsTrigger>
       </TabsList>
       <TabsContent value="pending">
-        <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-          {importLegacy.isError && (
-            <span role="alert" className="text-caption text-destructive">
-              {t(($) => importLegacy.error instanceof ApiError && importLegacy.error.status === 503
-                ? $.project_memory.legacy_unavailable
-                : $.project_memory.legacy_error)}
-            </span>
-          )}
-          {importLegacy.isSuccess && (
-            <span role="status" className="text-caption text-muted-foreground">
-              {t(($) => {
-                if (importLegacy.data?.status === "pending") return $.project_memory.legacy_imported;
-                if (importLegacy.data) return $.project_memory.legacy_reviewed;
-                return $.project_memory.legacy_empty;
-              })}
-            </span>
-          )}
-          <Button type="button" variant="ghost" size="sm" disabled={importLegacy.isPending} aria-busy={importLegacy.isPending} onClick={() => importLegacy.mutate()}>
-            {t(($) => $.project_memory.import_legacy)}
-          </Button>
-        </div>
         {materialsQuery.isError ? (
           <MemoryLoadError retry={() => void materialsQuery.refetch()} />
         ) : materialsQuery.isPending ? (

@@ -183,10 +183,6 @@ export const AgentHarborMemoryReviewSchema = z.object({
   entry: AgentHarborMemoryEntrySchema.optional(),
 });
 
-export const AgentHarborMemoryImportSchema = z.object({
-  material: AgentHarborMemoryMaterialSchema.optional(),
-});
-
 export const AgentHarborMemorySettingsSchema = z.object({
   record_enabled: z.boolean(),
   cloud_enabled: z.boolean(),

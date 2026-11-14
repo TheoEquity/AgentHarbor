@@ -114,12 +114,6 @@
       "disabled": "已停用",
       "unknown": "未知状态"
     },
-    "import_legacy": "导入旧版记忆",
-    "legacy_imported": "旧版记忆已进入待处理列表。",
-    "legacy_empty": "没有可导入的旧版记忆。",
-    "legacy_unavailable": "暂时无法读取旧版记忆。",
-    "legacy_error": "无法导入旧版记忆",
-    "legacy_reviewed": "这份旧版记忆已经处理。",
     "choose_target": "选择保存位置",
     "stale_related_revision": "记录这份素材后，关联记忆已更新。请核对当前版本，或选择新建记忆。",
     "history": "版本历史",

@@ -114,12 +114,6 @@
       "disabled": "Disabled",
       "unknown": "Unknown status"
     },
-    "import_legacy": "Import legacy memory",
-    "legacy_imported": "Legacy memory is ready for review.",
-    "legacy_empty": "No legacy memory to import.",
-    "legacy_unavailable": "Legacy memory is temporarily unavailable.",
-    "legacy_error": "Unable to import legacy memory",
-    "legacy_reviewed": "This legacy memory is already in the review history.",
     "choose_target": "Choose a destination",
     "stale_related_revision": "The related memory changed after this material was recorded. Review the current revision or choose to create new memory.",
     "history": "Version history",

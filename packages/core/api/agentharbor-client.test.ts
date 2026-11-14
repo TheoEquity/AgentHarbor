@@ -119,7 +119,7 @@ describe("AgentHarbor task response boundary", () => {
 });
 
 describe("AgentHarbor memory response boundary", () => {
-  it("reads and updates the actual project snapshot", async () => {
+  it("reads the project memory snapshot", async () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
       project_id: "project", content: "Confirmed rule", version: "v1",
     }), { headers: { "Content-Type": "application/json" } })));
@@ -129,14 +129,7 @@ describe("AgentHarbor memory response boundary", () => {
     expect(await client.getAgentHarborMemory("project")).toEqual({
       projectId: "project", content: "Confirmed rule", version: "v1",
     });
-    expect(await client.putAgentHarborMemory("project", "Confirmed rule")).toEqual({
-      projectId: "project", content: "Confirmed rule", version: "v1",
-    });
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/api/projects/project/memory-snapshot");
-    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("/api/projects/project/memory/core");
-    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
-      method: "PUT", body: JSON.stringify({ content: "Confirmed rule" }),
-    });
   });
 
   it("does not present malformed memory as an empty document", async () => {
@@ -252,15 +245,6 @@ describe("AgentHarbor reviewed memory response boundary", () => {
     expect(await client.listAgentHarborMemoryEntries("project", "global")).toMatchObject([
       { status: "unknown", scope: "unknown", type: "unknown" },
     ]);
-  });
-
-  it("imports legacy memory as source material or reports an absent source", async () => {
-    const fetchMock = mockMemoryResponses({ material: wireMaterial }, {}, { material: { id: "invalid" } });
-    expect(await client.importAgentHarborLegacyMemory("project")).toMatchObject({ id: "material", status: "pending" });
-    expect(await client.importAgentHarborLegacyMemory("project")).toBeUndefined();
-    await expect(client.importAgentHarborLegacyMemory("project")).rejects.toThrow("Malformed response");
-    expect(fetchMock.mock.calls[0]?.[0]).toBe("https://api.example.test/api/projects/project/memory/import-legacy");
-    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: "POST" });
   });
 
   it("reads and validates the selected entry's history and authorized sources", async () => {

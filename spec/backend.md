@@ -18,7 +18,6 @@ AgentHarbor 的任务采集由用户本机发起，和底座原有的云端派�
 | `server/internal/handler/` | HTTP 入参、鉴权、工作区及项目归属校验、响应。 |
 | `server/pkg/db/queries/`、`server/pkg/db/generated/` | SQL 查询及 sqlc 生成代码。 |
 | `server/migrations/` | PostgreSQL 表结构迁移。 |
-| `server/internal/agentharbormemory/` | 服务端读取 MemoryCore 旧 L3，按项目导入待审核材料。 |
 | `tools/agentharbor-connector/` | 本机 Codex Hook、持久队列、定时同步和记忆 MCP。 |
 
 ## 大致规约

@@ -114,12 +114,6 @@
       "disabled": "Desactivada",
       "unknown": "Estado desconocido"
     },
-    "import_legacy": "Importar memoria anterior",
-    "legacy_imported": "La memoria anterior está lista para revisar.",
-    "legacy_empty": "No hay memoria anterior para importar.",
-    "legacy_unavailable": "La memoria anterior no está disponible en este momento.",
-    "legacy_error": "No se pudo importar la memoria anterior",
-    "legacy_reviewed": "Esta memoria anterior ya se procesó.",
     "choose_target": "Elegir un destino",
     "stale_related_revision": "La memoria relacionada cambió después de registrar este material. Revisa la versión actual o crea una memoria nueva.",
     "history": "Historial de versiones",

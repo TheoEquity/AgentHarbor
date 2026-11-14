@@ -19,7 +19,6 @@ vi.mock("@multica/core/api", async (importOriginal) => {
     ...actual,
     api: {
       listAgentHarborMemoryMaterials: vi.fn(),
-      importAgentHarborLegacyMemory: vi.fn(),
       listAgentHarborMemoryEntries: vi.fn(),
       getAgentHarborMemoryHistory: vi.fn(),
       reviewAgentHarborMemoryMaterial: vi.fn(),
@@ -257,21 +256,4 @@ describe("Project memory page", () => {
     expect(title).toHaveValue("Keep this draft");
   });
 
-  it("reports an unavailable legacy source and can retry into the pending inbox", async () => {
-    vi.mocked(api.listAgentHarborMemoryMaterials).mockResolvedValue([]);
-    vi.mocked(api.importAgentHarborLegacyMemory)
-      .mockRejectedValueOnce(new ApiError("Unavailable", 503, "Service Unavailable"))
-      .mockImplementationOnce(async () => {
-        const legacy = { ...source, sourceText: "Original project rules" };
-        vi.mocked(api.listAgentHarborMemoryMaterials).mockResolvedValue([legacy]);
-        return legacy;
-      });
-    const { user } = renderPage();
-    const importButton = screen.getByRole("button", { name: "Import legacy memory" });
-    await user.click(importButton);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Legacy memory is temporarily unavailable.");
-    await user.click(importButton);
-    expect(await screen.findByRole("status")).toHaveTextContent("Legacy memory is ready for review.");
-    expect(screen.getByText("Original project rules")).toBeInTheDocument();
-  });
 });

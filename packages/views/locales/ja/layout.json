@@ -114,12 +114,6 @@
       "disabled": "無効",
       "unknown": "不明な状態"
     },
-    "import_legacy": "旧バージョンのメモリを取り込む",
-    "legacy_imported": "旧バージョンのメモリを確認できます。",
-    "legacy_empty": "取り込める旧バージョンのメモリはありません。",
-    "legacy_unavailable": "旧バージョンのメモリを一時的に読み込めません。",
-    "legacy_error": "旧バージョンのメモリを取り込めません",
-    "legacy_reviewed": "この旧バージョンのメモリはすでに処理されています。",
     "choose_target": "保存先を選択",
     "stale_related_revision": "この素材の記録後に関連メモリが更新されました。現在の版を確認するか、新しいメモリを作成してください。",
     "history": "変更履歴",
