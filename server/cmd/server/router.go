@@ -2255,7 +2255,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 					r.Delete("/", h.DeleteProject)
 					r.With(handler.RequireHumanActor).Put("/memory/core", h.RejectAgentHarborLegacyMemoryWrite)
 					r.With(handler.RequireHumanActor).Post("/memory/access-token", h.IssueAgentHarborMemoryToken)
-					r.Get("/memory-snapshot", h.GetAgentHarborMemorySnapshot)
+					r.With(handler.RequireHumanActor).Get("/memory-snapshot", h.GetAgentHarborMemorySnapshot)
 					r.Route("/memory", func(r chi.Router) {
 						r.Use(handler.RequireHumanActor)
 						r.Get("/materials", h.ListAgentHarborMemoryMaterials)

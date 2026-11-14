@@ -46,6 +46,7 @@ func TestAgentHarborMemoryReviewLifecycle(t *testing.T) {
 		_, _ = testPool.Exec(ctx, "DELETE FROM agentharbor_memory_revision WHERE entry_id IN (SELECT id FROM agentharbor_memory_entry WHERE workspace_id = $1 AND project_id = $2)", testWorkspaceID, project)
 		_, _ = testPool.Exec(ctx, "DELETE FROM agentharbor_memory_entry WHERE workspace_id = $1 AND project_id = $2", testWorkspaceID, project)
 		_, _ = testPool.Exec(ctx, "DELETE FROM agentharbor_memory_material WHERE workspace_id = $1 AND project_id = $2", testWorkspaceID, project)
+		_, _ = testPool.Exec(ctx, "DELETE FROM agentharbor_memory_settings WHERE workspace_id = $1 AND project_id = $2", testWorkspaceID, project)
 	}()
 	scoped := func(method, id string, body any) *http.Request {
 		token, err := signAgentHarborMemoryToken(agentHarborMemoryTokenClaims{
@@ -160,6 +161,16 @@ func TestAgentHarborMemoryReviewLifecycle(t *testing.T) {
 	call(testHandler.UpdateAgentHarborMemoryEntry, revision(1), http.StatusConflict)
 	call(testHandler.UpdateAgentHarborMemoryEntry, revision(2), http.StatusOK)
 	assertEntries(project, 0)
+	call(testHandler.SubmitAgentHarborMemoryMaterial, scoped(http.MethodPost, project, correction), http.StatusOK)
+	correction["request_id"] = uuid.NewString()
+	call(testHandler.SubmitAgentHarborMemoryMaterial, scoped(http.MethodPost, project, correction), http.StatusNotFound)
+
+	call(testHandler.PutAgentHarborMemorySettings, web(http.MethodPut, "", map[string]bool{
+		"record_enabled": true, "cloud_enabled": true, "use_memory": false, "use_global": false,
+	}), http.StatusOK)
+	call(testHandler.SubmitAgentHarborMemoryMaterial, scoped(http.MethodPost, project, map[string]string{
+		"request_id": uuid.NewString(), "source_text": "Recording can continue independently of retrieval.",
+	}), http.StatusCreated)
 }
 
 func TestAgentHarborLegacyImportStaysPendingAndDeduplicates(t *testing.T) {

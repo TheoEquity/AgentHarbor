@@ -51,23 +51,6 @@ func (h *Handler) SubmitAgentHarborMemoryMaterial(w http.ResponseWriter, r *http
 		}
 		revision = pgtype.Int4{Int32: *body.RelatedRevision, Valid: true}
 	}
-	if relatedID.Valid {
-		entry, ok := loadMemoryEntry(w, r.Context(), h.Queries, scope, relatedID)
-		if !ok {
-			return
-		}
-		if entry.Scope == "global" {
-			settings, err := readMemorySettings(r.Context(), h.Queries, scope)
-			if err != nil {
-				memoryStoreError(w, err)
-				return
-			}
-			if !settings.UseGlobal || !settings.UseMemory {
-				writeError(w, http.StatusNotFound, "memory entry not found")
-				return
-			}
-		}
-	}
 	ctx := r.Context()
 	row, status, ok := h.storeMemoryMaterial(w, ctx, scope, db.CreateAgentHarborMemoryMaterialParams{
 		WorkspaceID: scope.workspace, ProjectID: scope.project, SubmittedBy: scope.actor,
@@ -90,27 +73,31 @@ func (h *Handler) storeMemoryMaterial(w http.ResponseWriter, ctx context.Context
 		memoryStoreError(w, err)
 		return db.AgentharborMemoryMaterial{}, 0, false
 	}
-	var row db.AgentharborMemoryMaterial
-	status := http.StatusCreated
-	if settings.RecordEnabled && settings.CloudEnabled {
-		row, err = q.CreateAgentHarborMemoryMaterial(ctx, input)
-	} else {
-		err = pgx.ErrNoRows
+	request := db.GetAgentHarborMemoryMaterialByRequestParams{
+		WorkspaceID: scope.workspace, ProjectID: scope.project, SubmittedBy: input.SubmittedBy, RequestID: input.RequestID,
 	}
+	row, err := q.GetAgentHarborMemoryMaterialByRequest(ctx, request)
+	status := http.StatusOK
 	if errors.Is(err, pgx.ErrNoRows) {
-		row, err = q.GetAgentHarborMemoryMaterialByRequest(ctx, db.GetAgentHarborMemoryMaterialByRequestParams{
-			WorkspaceID: scope.workspace, ProjectID: scope.project, SubmittedBy: input.SubmittedBy, RequestID: input.RequestID,
-		})
-		if errors.Is(err, pgx.ErrNoRows) {
+		if !settings.RecordEnabled || !settings.CloudEnabled {
 			writeError(w, http.StatusForbidden, "memory recording is disabled for this project")
 			return db.AgentharborMemoryMaterial{}, 0, false
 		}
-		if err == nil && (row.SourceText != input.SourceText || row.Context != input.Context || row.SessionID != input.SessionID ||
-			row.TurnID != input.TurnID || row.RelatedEntryID != input.RelatedEntryID || row.RelatedRevision != input.RelatedRevision) {
-			writeErrorCode(w, http.StatusConflict, "memory_request_conflict", "request id already belongs to different material")
+		if input.RelatedEntryID.Valid && !readableRelatedMemoryEntry(w, ctx, q, scope, settings, input.RelatedEntryID) {
 			return db.AgentharborMemoryMaterial{}, 0, false
 		}
-		status = http.StatusOK
+		row, err = q.CreateAgentHarborMemoryMaterial(ctx, input)
+		status = http.StatusCreated
+		if errors.Is(err, pgx.ErrNoRows) {
+			row, err = q.GetAgentHarborMemoryMaterialByRequest(ctx, request)
+			status = http.StatusOK
+		}
+	}
+	if err == nil && status == http.StatusOK && (row.SourceText != input.SourceText || row.Context != input.Context ||
+		row.SessionID != input.SessionID || row.TurnID != input.TurnID || row.RelatedEntryID != input.RelatedEntryID ||
+		row.RelatedRevision != input.RelatedRevision) {
+		writeErrorCode(w, http.StatusConflict, "memory_request_conflict", "request id already belongs to different material")
+		return db.AgentharborMemoryMaterial{}, 0, false
 	}
 	if err == nil {
 		err = tx.Commit(ctx)
@@ -120,6 +107,22 @@ func (h *Handler) storeMemoryMaterial(w http.ResponseWriter, ctx context.Context
 		return db.AgentharborMemoryMaterial{}, 0, false
 	}
 	return row, status, true
+}
+
+func readableRelatedMemoryEntry(w http.ResponseWriter, ctx context.Context, q *db.Queries, scope agentHarborMemoryScope, settings agentHarborMemorySettings, id pgtype.UUID) bool {
+	if !settings.UseMemory {
+		writeError(w, http.StatusNotFound, "memory entry not found")
+		return false
+	}
+	entry, ok := loadMemoryEntry(w, ctx, q, scope, id)
+	if !ok {
+		return false
+	}
+	if entry.Status != "active" || (entry.Scope == "global" && !settings.UseGlobal) {
+		writeError(w, http.StatusNotFound, "memory entry not found")
+		return false
+	}
+	return true
 }
 
 func (h *Handler) ImportAgentHarborLegacyMemory(w http.ResponseWriter, r *http.Request) {
