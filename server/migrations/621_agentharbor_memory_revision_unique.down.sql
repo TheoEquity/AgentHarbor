@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY agentharbor_memory_revision_unique;

@@ -6,8 +6,8 @@
 
 ```text
 本机 Codex → Python 连接程序 → 定时 HTTP 同步 → Go HTTP API → PostgreSQL 任务事件
-本机 Codex → 记忆 MCP → 按需 HTTP 读写 → Go HTTP API → MemoryCore 项目 L3
-Web（经 Next.js 同源代理）/ Desktop → Go HTTP API
+本机 Codex → 启动 Hook / 记忆 MCP → Go HTTP API → PostgreSQL 记忆条目与材料
+Web（经 Next.js 同源代理）/ Desktop → Go HTTP API → 审核材料与管理条目
 ```
 
 AgentHarbor 的任务采集由用户本机发起，和底座原有的云端派发、daemon 执行链路分开。
@@ -18,14 +18,14 @@ AgentHarbor 的任务采集由用户本机发起，和底座原有的云端派�
 | `server/internal/handler/` | HTTP 入参、鉴权、工作区及项目归属校验、响应。 |
 | `server/pkg/db/queries/`、`server/pkg/db/generated/` | SQL 查询及 sqlc 生成代码。 |
 | `server/migrations/` | PostgreSQL 表结构迁移。 |
-| `server/internal/agentharbormemory/` | 服务端访问 MemoryCore；其凭据不交给浏览器。 |
+| `server/internal/agentharbormemory/` | 服务端读取 MemoryCore 旧 L3，按项目导入待审核材料。 |
 | `tools/agentharbor-connector/` | 本机 Codex Hook、持久队列、定时同步和记忆 MCP。 |
 
 ## 大致规约
 
 - 数据库访问沿用 sqlc。SQL 改动后运行 `make sqlc`；迁移提供 up/down 文件，不加外键或级联；新索引用独立迁移执行 `CREATE [UNIQUE] INDEX CONCURRENTLY`。
 - 任务同步按事件 ID 幂等入库，只有服务端确认的事件才从本机队列清理。任务上报与记忆读写分开处理，记忆服务异常不应阻断任务上报。
-- 当前记忆管理单位是**每项目一份 MemoryCore L3 正文**。四类记忆、独立条目、全局记忆和新会话直接云端读取仍是后续目标。
+- Codex 可提交待审核材料。人工批准后，独立条目按项目或本人全局范围生效，并保留来源和版本。启动读取只提供项目允许的有效、无争议条目；读取回执随任务事件同步。
 - 用实际事件与接口结果区分“已上报”“已接收”“本轮结束”“任务完成”。
 
 ## 接口对接

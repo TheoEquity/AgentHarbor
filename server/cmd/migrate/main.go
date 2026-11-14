@@ -140,6 +140,8 @@ var pgBigmOperatorClass = extensionOperatorClass{
 // they are still pending: a fresh self-hosted install, which is exactly where an
 // interrupted build would otherwise leave a permanently unusable index.
 var concurrentIndexCleanups = map[string]string{
+	"621_agentharbor_memory_revision_unique":                    "agentharbor_memory_revision_unique",
+	"620_agentharbor_memory_request_unique":                     "agentharbor_memory_request_unique",
 	"618_agentharbor_event_project_session_index":               "agentharbor_event_project_session_idx",
 	"613_skill_version_index":                                   "idx_skill_version_skill_version",
 	"606_agent_task_queue_runtime_active_index":                 "idx_agent_task_queue_runtime_active",

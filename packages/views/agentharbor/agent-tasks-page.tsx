@@ -15,6 +15,51 @@ import { PageHeader } from "../layout/page-header";
 
 const EMPTY_PROJECTS: Project[] = [];
 
+function StartupMemoryReceipt({ events, formatTime }: {
+  events: AgentHarborTask["events"];
+  formatTime: (value: string) => string;
+}) {
+  const { t } = useT("layout");
+  let latest: AgentHarborTask["events"][number] | undefined;
+  for (const event of events) {
+    if (event.memoryReceipt && (!latest || event.localSeq > latest.localSeq)) latest = event;
+  }
+  const receipt = latest?.memoryReceipt;
+  if (!latest || !receipt) return null;
+  const { occurredAt } = latest;
+  const readOutcome = receipt.fetched
+    ? receipt.entries.length > 0 ? "loaded" : "empty"
+    : "unavailable";
+  const hookOutcome = receipt.contextEmitted
+    ? "memory_emitted"
+    : receipt.emitted ? "guidance_emitted" : "nothing_emitted";
+
+  return (
+    <details className="mt-2 max-w-72 text-caption text-muted-foreground">
+      <summary className="w-fit cursor-pointer font-medium text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+        {t(($) => $.agent_tasks.memory_receipt.title)}
+      </summary>
+      <div className="mt-2 space-y-1">
+        <time dateTime={occurredAt}>{formatTime(occurredAt)}</time>
+        <p>{t(($) => $.agent_tasks.memory_receipt[readOutcome])}</p>
+        <p>{t(($) => $.agent_tasks.memory_receipt[hookOutcome])}</p>
+        {receipt.version && (
+          <p className="wrap-anywhere">{t(($) => $.agent_tasks.memory_receipt.version, { version: receipt.version })}</p>
+        )}
+        {receipt.entries.length > 0 && (
+          <ul className="mt-2 max-h-32 space-y-1 overflow-auto">
+            {receipt.entries.map((entry) => (
+              <li key={entry.id} className="wrap-anywhere">
+                {t(($) => $.agent_tasks.memory_receipt.entry_revision, entry)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </details>
+  );
+}
+
 export function AgentTasksPage() {
   const { t, i18n } = useT("layout");
   const wsId = useCurrentWorkspace()?.id ?? "";
@@ -111,6 +156,7 @@ export function AgentTasksPage() {
                     <td className="px-4 py-3">
                       <span className="block">{task.agentType === "codex" ? "Codex" : task.agentType}</span>
                       <span className="block text-caption text-muted-foreground" title={task.sessionId}>{task.sessionId.slice(0, 8)}</span>
+                      <StartupMemoryReceipt events={task.events} formatTime={formatTime} />
                     </td>
                     <td className="px-4 py-3"><span className="inline-block rounded-full bg-surface-hover px-2 py-0.5 text-caption">{statusLabel(task)}</span></td>
                     <td className="whitespace-nowrap px-4 py-3"><time dateTime={task.lastOccurredAt}>{formatTime(task.lastOccurredAt)}</time></td>

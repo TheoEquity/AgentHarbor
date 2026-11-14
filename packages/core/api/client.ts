@@ -261,7 +261,18 @@ import { type Logger, noopLogger } from "../logger";
 import { createRequestId, createSafeId } from "../utils";
 import { getCurrentSlug } from "../platform/workspace-storage";
 import { parseWithFallback } from "./schema";
-import type { AgentHarborMemorySnapshot, AgentHarborTasksResponse } from "./schemas";
+import type {
+  AgentHarborMemoryEntry,
+  AgentHarborMemoryHistory,
+  AgentHarborMemoryMaterial,
+  AgentHarborMemoryReview,
+  AgentHarborMemoryReviewInput,
+  AgentHarborMemoryScope,
+  AgentHarborMemorySettings,
+  AgentHarborMemorySnapshot,
+  AgentHarborMemoryUpdateInput,
+  AgentHarborTasksResponse,
+} from "./schemas";
 import {
   RuntimeProfileSchema,
   RuntimeProfileListSchema,
@@ -353,6 +364,13 @@ import {
   ProjectSchema,
   ListProjectsResponseSchema,
   AgentHarborTasksResponseSchema,
+  AgentHarborMemoryEntriesSchema,
+  AgentHarborMemoryEntrySchema,
+  AgentHarborMemoryHistorySchema,
+  AgentHarborMemoryImportSchema,
+  AgentHarborMemoryMaterialsSchema,
+  AgentHarborMemoryReviewSchema,
+  AgentHarborMemorySettingsSchema,
   AgentHarborMemorySnapshotSchema,
   EMPTY_PROJECT,
   EMPTY_LIST_PROJECTS_RESPONSE,
@@ -4259,6 +4277,114 @@ export class ApiClient {
     );
     if (!snapshot) throw new Error("Invalid project memory response");
     return snapshot;
+  }
+
+  private async fetchAgentHarborMemory<T>(
+    projectId: string,
+    resource: string,
+    schema: ZodType<T>,
+    endpoint: string,
+    options?: RequestInit,
+  ): Promise<T> {
+    const raw = await this.fetch<unknown>(
+      `/api/projects/${encodeURIComponent(projectId)}/memory/${resource}`,
+      options,
+    );
+    const parsed = parseWithFallback<T | null>(raw, schema, null, { endpoint });
+    if (parsed === null) throw new Error(`Malformed response from ${endpoint}`);
+    return parsed;
+  }
+
+  async listAgentHarborMemoryMaterials(projectId: string): Promise<AgentHarborMemoryMaterial[]> {
+    const { materials } = await this.fetchAgentHarborMemory(
+      projectId, "materials", AgentHarborMemoryMaterialsSchema, "GET /api/projects/:id/memory/materials",
+    );
+    return materials;
+  }
+
+  async importAgentHarborLegacyMemory(projectId: string): Promise<AgentHarborMemoryMaterial | undefined> {
+    const { material } = await this.fetchAgentHarborMemory(
+      projectId, "import-legacy", AgentHarborMemoryImportSchema, "POST /api/projects/:id/memory/import-legacy",
+      { method: "POST" },
+    );
+    return material;
+  }
+
+  async reviewAgentHarborMemoryMaterial(
+    projectId: string, materialId: string, review: AgentHarborMemoryReviewInput,
+  ): Promise<AgentHarborMemoryReview> {
+    const body = review.action === "approve" ? {
+      action: review.action,
+      scope: review.scope,
+      type: review.type,
+      title: review.title,
+      content: review.content,
+      entry_id: review.target?.entryId,
+      expected_revision: review.target?.expectedRevision,
+      additional_material_ids: review.additionalMaterialIds,
+    } : review;
+    const result = await this.fetchAgentHarborMemory(
+      projectId, `materials/${encodeURIComponent(materialId)}`, AgentHarborMemoryReviewSchema,
+      "PATCH /api/projects/:id/memory/materials/:materialId",
+      { method: "PATCH", body: JSON.stringify(body) },
+    );
+    if (review.action === "approve" && !result.entry) {
+      throw new Error("Approved material response is missing its memory entry");
+    }
+    return result;
+  }
+
+  async listAgentHarborMemoryEntries(
+    projectId: string, scope: AgentHarborMemoryScope,
+  ): Promise<AgentHarborMemoryEntry[]> {
+    const { entries } = await this.fetchAgentHarborMemory(
+      projectId, `entries?scope=${scope}`, AgentHarborMemoryEntriesSchema, "GET /api/projects/:id/memory/entries",
+    );
+    return entries;
+  }
+
+  async getAgentHarborMemoryHistory(projectId: string, entryId: string): Promise<AgentHarborMemoryHistory> {
+    return this.fetchAgentHarborMemory(
+      projectId, `entries/${encodeURIComponent(entryId)}/history`, AgentHarborMemoryHistorySchema,
+      "GET /api/projects/:id/memory/entries/:entryId/history",
+    );
+  }
+
+  async updateAgentHarborMemoryEntry(
+    projectId: string, entryId: string, update: AgentHarborMemoryUpdateInput,
+  ): Promise<AgentHarborMemoryEntry> {
+    const body = update.action === "revise" ? {
+      action: update.action,
+      expected_revision: update.expectedRevision,
+      title: update.title,
+      content: update.content,
+      type: update.type,
+    } : { action: update.action, expected_revision: update.expectedRevision };
+    return this.fetchAgentHarborMemory(
+      projectId, `entries/${encodeURIComponent(entryId)}`, AgentHarborMemoryEntrySchema,
+      "PATCH /api/projects/:id/memory/entries/:entryId",
+      { method: "PATCH", body: JSON.stringify(body) },
+    );
+  }
+
+  async getAgentHarborMemorySettings(projectId: string): Promise<AgentHarborMemorySettings> {
+    return this.fetchAgentHarborMemory(
+      projectId, "settings", AgentHarborMemorySettingsSchema, "GET /api/projects/:id/memory/settings",
+    );
+  }
+
+  async putAgentHarborMemorySettings(
+    projectId: string, settings: AgentHarborMemorySettings,
+  ): Promise<AgentHarborMemorySettings> {
+    return this.fetchAgentHarborMemory(
+      projectId, "settings", AgentHarborMemorySettingsSchema, "PUT /api/projects/:id/memory/settings",
+      { method: "PUT", body: JSON.stringify({
+        record_enabled: settings.recordEnabled,
+        cloud_enabled: settings.cloudEnabled,
+        use_memory: settings.useMemory,
+        use_global: settings.useGlobal,
+      }) },
+    );
   }
 
   async getProject(id: string): Promise<Project> {

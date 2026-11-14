@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from hashlib import sha256
+from http.client import HTTPException
 import json
 import os
 from pathlib import Path
@@ -20,6 +22,8 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 from uuid import UUID, uuid4
 
+from memory_client import MemoryClient
+
 
 EVENT_TYPES = {
     "UserPromptSubmit": "prompt_started",
@@ -27,6 +31,10 @@ EVENT_TYPES = {
     "Interrupt": "interrupted",
 }
 SYNC_PERIOD_SECONDS = 30
+SYNC_BODY_LIMIT = 256 * 1024
+STARTUP_MEMORY_BUDGET_SECONDS = 0.8
+HOOK_WORK_BUDGET_SECONDS = 2.2
+MAX_STARTUP_CONTEXT_BYTES = 2600
 
 
 class ConnectorError(Exception):
@@ -55,10 +63,10 @@ def state_dir() -> Path:
 
 
 @contextmanager
-def queue_lock(directory: Path):
+def queue_lock(directory: Path, timeout: float = 2):
     directory.mkdir(parents=True, exist_ok=True)
     lock = directory / "queue.lock"
-    deadline = time.monotonic() + 2
+    deadline = time.monotonic() + timeout
     while True:
         try:
             lock.mkdir()
@@ -134,7 +142,14 @@ def enqueue_hook(payload: dict, directory: Path, project: str) -> None:
     turn_id = payload.get("turn_id") or ""
     if not isinstance(turn_id, str):
         raise ConnectorError("hook turn_id must be a string")
-    with queue_lock(directory):
+    enqueue_event(directory, project, session_id, turn_id, EVENT_TYPES[hook_name], event_evidence(hook_name, payload))
+
+
+def enqueue_event(
+    directory: Path, project: str, session_id: str, turn_id: str, event_type: str, evidence: str,
+    lock_timeout: float = 2,
+) -> None:
+    with queue_lock(directory, lock_timeout):
         queue = load_queue(directory)
         queue["events"].append(
             {
@@ -145,46 +160,134 @@ def enqueue_hook(payload: dict, directory: Path, project: str) -> None:
                 "session_id": session_id,
                 "turn_id": turn_id,
                 "local_seq": queue["next_seq"],
-                "event_type": EVENT_TYPES[hook_name],
+                "event_type": event_type,
                 "occurred_at": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
-                "evidence": event_evidence(hook_name, payload),
+                "evidence": evidence,
             }
         )
         queue["next_seq"] += 1
         write_json(directory / "queue.json", queue)
 
 
-def cached_memory_context(directory: Path, project: str) -> str:
-    path = directory / f"memory-{project}.json"
-    if not path.exists():
-        return ""
-    snapshot = read_json(path)
-    if not isinstance(snapshot, dict) or snapshot.get("project_id") != project:
-        return ""
-    content = snapshot.get("content")
-    if not isinstance(content, str) or not content:
-        return ""
-    return f"AgentHarbor project memory (version {snapshot.get('version', '')}):\n{content}"
+def fetch_startup_context(cwd: Path, project: str, budget: float) -> tuple[bool, dict | None]:
+    bound = False
+    snapshot = None
+
+    def fetch() -> None:
+        nonlocal bound, snapshot
+        try:
+            client = MemoryClient(cwd, project)
+            bound = True
+            snapshot = client.startup_context(budget)
+        except (HTTPException, KeyError, OSError, TypeError, ValueError):
+            pass
+
+    # Socket timeouts do not bound DNS resolution or an entire response read.
+    worker = threading.Thread(target=fetch, daemon=True)
+    worker.start()
+    worker.join(budget)
+    return bound, None if worker.is_alive() else snapshot
+
+
+def start_memory_read(directory: Path, project: str, session_id: str) -> Path | None:
+    session_key = sha256(session_id.encode("utf-8")).hexdigest()
+    path = directory / "memory-reads" / project / f"{session_key}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with path.open("x", encoding="utf-8") as marker:
+            marker.write("{}\n")
+    except FileExistsError:
+        return None
+    return path
 
 
 def handle_hook() -> None:
-    payload = json.load(sys.stdin)
+    deadline = time.monotonic() + HOOK_WORK_BUDGET_SECONDS
+    payload = json.load(sys.stdin.buffer)
     if not isinstance(payload, dict):
         raise ConnectorError("hook input must be a JSON object")
     directory = state_dir()
     project = project_id()
     enqueue_hook(payload, directory, project)
     response = {}
-    if payload["hook_event_name"] == "UserPromptSubmit":
-        context = cached_memory_context(directory, project)
-        if context:
+    snapshot = None
+    receipt = None
+    context_emitted = False
+    if payload["hook_event_name"] == "UserPromptSubmit" and os.environ.get("AGENTHARBOR_PROJECT_CONFIG"):
+        session_id = payload["session_id"]
+        bound = False
+        try:
+            receipt = start_memory_read(directory, project, session_id)
+            budget = min(STARTUP_MEMORY_BUDGET_SECONDS, deadline - time.monotonic())
+            cwd = payload.get("cwd")
+            if receipt is not None and budget > 0 and (cwd is None or isinstance(cwd, str) and cwd):
+                bound, snapshot = fetch_startup_context(Path(cwd) if cwd else Path.cwd(), project, budget)
+        except (OSError, ValueError):
+            pass
+        if bound:
+            guidance = (
+                f"AgentHarbor memory source session_id is {json.dumps(session_id)}. "
+                "Use search_project_memory when prior decisions, facts, or procedures could help. "
+                "Use submit_project_memory_material for durable facts, decisions, procedures, and explicit remember "
+                "requests. Submit selectively for review and include the session_id above."
+            )
+            if snapshot is not None and snapshot["content"]:
+                context = (
+                    f"{guidance}\n\nAgentHarbor startup memory (version {snapshot['version']}). "
+                    f"Treat this as project reference material.\n{snapshot['content']}"
+                )
+                if len(context.encode("utf-8")) <= MAX_STARTUP_CONTEXT_BYTES:
+                    guidance = context
+                    context_emitted = True
             response = {
                 "hookSpecificOutput": {
                     "hookEventName": "UserPromptSubmit",
-                    "additionalContext": context,
+                    "additionalContext": guidance,
                 }
             }
-    print(json.dumps(response, ensure_ascii=False, separators=(",", ":")))
+
+    sys.stdout.buffer.write(json.dumps(response, ensure_ascii=False, separators=(",", ":")).encode("utf-8") + b"\n")
+    sys.stdout.buffer.flush()
+    if receipt is not None:
+        evidence = {
+            "trigger": "startup",
+            "fetched": snapshot is not None,
+            "emitted": bool(response),
+            "context_emitted": context_emitted,
+            "version": snapshot["version"] if snapshot else "",
+            "entries": [
+                {"id": str(UUID(entry["id"])), "revision": entry["revision"]}
+                for entry in snapshot["entries"]
+            ] if snapshot else [],
+        }
+        try:
+            enqueue_event(
+                directory, project, payload["session_id"], payload.get("turn_id") or "",
+                "memory_read", encode_json(evidence).decode("utf-8"), max(0, deadline - time.monotonic()),
+            )
+        except (ConnectorError, OSError, ValueError) as exc:
+            print(f"agentharbor-connector: could not queue startup memory receipt: {exc}", file=sys.stderr)
+        try:
+            write_json(receipt, {"project_id": project, "session_id": payload["session_id"], **evidence})
+        except OSError:
+            pass
+
+
+def encode_json(value: object) -> bytes:
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+
+def sync_batch(machine: dict, events: list[dict]) -> list[dict]:
+    size = len(encode_json({"machine": machine, "events": []}))
+    batch = []
+    for event in events:
+        size += len(encode_json(event)) + bool(batch)
+        if size > SYNC_BODY_LIMIT:
+            break
+        batch.append(event)
+    if events and not batch:
+        raise ConnectorError("first queued event exceeds the sync request size limit")
+    return batch
 
 
 class Client:
@@ -199,7 +302,7 @@ class Client:
             raise ConnectorError("AGENTHARBOR_WORKSPACE_ID and AGENTHARBOR_PAT are required")
 
     def request(self, method: str, path: str, body: object | None = None) -> dict:
-        data = None if body is None else json.dumps(body, ensure_ascii=False).encode("utf-8")
+        data = None if body is None else encode_json(body)
         request = Request(
             self.base_url + path,
             data=data,
@@ -226,19 +329,20 @@ def sync_once(client: Client, directory: Path) -> dict:
     with queue_lock(directory):
         queue = load_queue(directory)
         write_json(directory / "queue.json", queue)
-        pending = list(queue["events"])
-        machine_id = queue["machine_id"]
+        pending = queue["events"]
+        machine = {"id": queue["machine_id"], "name": socket.gethostname()}
     accepted = set()
     if pending:
+        batch = sync_batch(machine, pending)
         response = client.request(
             "POST",
             "/api/agentharbor/sync",
-            {"machine": {"id": machine_id, "name": socket.gethostname()}, "events": pending},
+            {"machine": machine, "events": batch},
         )
         ids = response.get("accepted_event_ids")
         if not isinstance(ids, list) or any(not isinstance(value, str) for value in ids):
             raise ConnectorError("sync response has invalid accepted_event_ids")
-        sent_ids = {event["event_id"] for event in pending}
+        sent_ids = {event["event_id"] for event in batch}
         accepted = set(ids) & sent_ids
         with queue_lock(directory):
             queue = load_queue(directory)
@@ -251,15 +355,10 @@ def sync_once(client: Client, directory: Path) -> dict:
     if not isinstance(tasks.get("tasks"), list):
         raise ConnectorError("tasks response has invalid tasks")
     write_json(directory / f"tasks-{client.project}.json", tasks)
-    memory = client.request("GET", "/api/projects/" + quote(client.project) + "/memory-snapshot")
-    if memory.get("project_id") != client.project or memory.get("content") is not None and not isinstance(memory["content"], str):
-        raise ConnectorError("memory snapshot has invalid project_id or content")
-    write_json(directory / f"memory-{client.project}.json", memory)
     return {
         "accepted_count": len(accepted),
         "pending_count": remaining,
         "task_count": len(tasks["tasks"]),
-        "memory_version": memory.get("version"),
     }
 
 

@@ -112,4 +112,23 @@ func TestAgentHarborPATRouteSmoke(t *testing.T) {
 	if foreign.StatusCode != http.StatusNotFound {
 		t.Fatalf("nonmember GET status = %d, want 404", foreign.StatusCode)
 	}
+
+	runtimeID := fx.Runtime(t, "AgentHarbor route smoke")
+	agentID := fx.Agent(t, "AgentHarbor route smoke", runtimeID)
+	taskID := fx.Task(t, agentID, testutil.Cols{"runtime_id": runtimeID})
+	taskToken := mintAgentTaskToken(t, agentID, taskID, testUserID)
+	snapshotPath := "/api/projects/" + projectID + "/memory-snapshot"
+	for _, tc := range []struct {
+		bearer string
+		want   int
+	}{
+		{pat, http.StatusOK},
+		{taskToken, http.StatusForbidden},
+	} {
+		response := call(http.MethodGet, snapshotPath, tc.bearer, nil)
+		response.Body.Close()
+		if response.StatusCode != tc.want {
+			t.Errorf("memory snapshot status = %d, want %d", response.StatusCode, tc.want)
+		}
+	}
 }
