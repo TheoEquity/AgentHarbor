@@ -31,7 +31,8 @@ import { EntryEditor, MaterialReview } from "./project-memory-page-editor";
 
 const EMPTY_ENTRIES: AgentHarborMemoryEntry[] = [];
 const EMPTY_MATERIALS: AgentHarborMemoryMaterial[] = [];
-const CONNECT_COMMAND = "py -3 tools/agentharbor-connector/connector.py connect";
+const CONNECT_COMMAND_WINDOWS = 'py -3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"';
+const CONNECT_COMMAND_UNIX = 'python3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"';
 
 export function ProjectMemoryPage() {
   const { t } = useT("layout");
@@ -237,8 +238,8 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
   const queryClient = useQueryClient();
   const query = useQuery(agentHarborMemorySettingsOptions(wsId, projectId));
   const [draft, setDraft] = useState<AgentHarborMemorySettings | null>(null);
-  const [connecting, setConnecting] = useState(false);
   const [connectStatus, setConnectStatus] = useState<"copied" | "error" | null>(null);
+  const issueConnection = useMutation({ mutationFn: () => api.issueAgentHarborMemoryToken(projectId) });
   const save = useMutation({
     mutationFn: (settings: AgentHarborMemorySettings) => api.putAgentHarborMemorySettings(projectId, settings),
     onSuccess: (settings) => {
@@ -260,12 +261,11 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
   const changed = fields.some(({ key }) => settings[key] !== saved[key]);
 
   async function copyCodexConnection() {
-    setConnecting(true);
     setConnectStatus(null);
     try {
       const apiUrl = new URL(api.getBaseUrl() || window.location.origin, window.location.href);
       if (apiUrl.protocol !== "http:" && apiUrl.protocol !== "https:") throw new Error("Invalid API URL");
-      const issued = await api.issueAgentHarborMemoryToken(projectId);
+      const issued = await issueConnection.mutateAsync();
       if (issued.projectId !== projectId) throw new Error("Wrong project");
       const copied = await copyText(JSON.stringify({
         version: 1,
@@ -277,8 +277,6 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
       setConnectStatus(copied ? "copied" : "error");
     } catch {
       setConnectStatus("error");
-    } finally {
-      setConnecting(false);
     }
   }
 
@@ -312,8 +310,13 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
       <section className="space-y-3 rounded-xl border border-surface-border bg-card p-4">
         <h2 className="font-medium">{t(($) => $.project_memory.connect_codex)}</h2>
         <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_note)}</p>
-        <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-caption">{CONNECT_COMMAND}</code>
-        <Button type="button" variant="outline" size="sm" disabled={connecting} aria-busy={connecting} onClick={() => void copyCodexConnection()}>
+        <div className="space-y-2">
+          <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_windows)}</p>
+          <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-caption">{CONNECT_COMMAND_WINDOWS}</code>
+          <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_unix)}</p>
+          <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-caption">{CONNECT_COMMAND_UNIX}</code>
+        </div>
+        <Button type="button" variant="outline" size="sm" disabled={issueConnection.isPending} aria-busy={issueConnection.isPending} onClick={() => void copyCodexConnection()}>
           {t(($) => $.project_memory.copy_connection)}
         </Button>
         {connectStatus === "copied" && <p role="status" className="text-caption text-muted-foreground">{t(($) => $.project_memory.connection_copied)}</p>}
