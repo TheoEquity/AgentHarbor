@@ -85,6 +85,8 @@ describe("Project memory page", () => {
     vi.mocked(copyText).mockResolvedValue(true);
     const { user } = renderPage();
     await user.click(screen.getByRole("tab", { name: "Settings" }));
+    expect(screen.getByText('py -3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"')).toBeInTheDocument();
+    expect(screen.getByText('python3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"')).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "Copy connection info" }));
     expect(api.issueAgentHarborMemoryToken).toHaveBeenCalledWith("project");
     expect(JSON.parse(vi.mocked(copyText).mock.calls[0]?.[0] ?? "{}")).toEqual({

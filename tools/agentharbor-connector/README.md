@@ -4,13 +4,13 @@ The connector uses Python 3.10+ and the standard library. It queues Codex lifecy
 
 ## Quick memory connection
 
-In AgentHarbor, open the project's **Memory → Settings**, then choose **Copy connection info**. The clipboard holds a project-scoped token for 30 days. Keep it out of chat. From the AgentHarbor source checkout, ask Codex to run:
+In AgentHarbor, open the project's **Memory → Settings**, then choose **Copy connection info**. The clipboard holds a project-scoped token for 30 days. Keep it out of chat. Replace `<project-directory>` with the selected project's existing local code directory. From the AgentHarbor source checkout, ask Codex to run:
 
 ```powershell
-py -3 tools/agentharbor-connector/connector.py connect
+py -3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"
 ```
 
-On macOS or Linux, use `python3` instead of `py -3`. The command reads the clipboard, verifies the selected project through AgentHarbor, stores the token in your private Codex directory, and writes this project's `.codex/config.toml` binding. Restart Codex to load `search_project_memory` and `submit_project_memory_material`. Repeat the same steps when the token expires. The quick connection installs the memory MCP tools; task sync and prompt hooks use the separate configuration below.
+On macOS or Linux, use `python3` instead of `py -3`. The command reads the clipboard, verifies the selected project through AgentHarbor, stores the token in your private Codex directory, and writes `.codex/config.toml` in the specified project directory. Restart Codex to load `search_project_memory` and `submit_project_memory_material`. Repeat the same steps when the token expires. The quick connection installs the memory MCP tools; task sync and prompt hooks use the separate configuration below.
 
 ## Project configuration
 

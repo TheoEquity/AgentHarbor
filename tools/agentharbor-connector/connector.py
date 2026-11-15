@@ -387,11 +387,14 @@ def run_loop(client: Client, directory: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("hook", "sync-once", "run", "tasks", "connect"))
+    parser.add_argument("--project-root", type=Path, help="local code directory to bind to project memory")
     args = parser.parse_args()
+    if args.command == "connect" and args.project_root is None:
+        parser.error("connect requires --project-root")
     try:
         if args.command == "connect":
             from connect_setup import connect
-            project = connect(Path.cwd())
+            project = connect(args.project_root)
             print(f"Connected project {project} to Codex memory. Restart Codex to load the tools.")
             return 0
         directory = state_dir()

@@ -8,6 +8,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
+import connector
 from connect_setup import connect
 
 
@@ -91,6 +92,23 @@ class ConnectSetupTests(unittest.TestCase):
         }), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "already bound"):
             connect(self.root, self.bundle())
+
+    def test_cli_connects_explicit_project_root_not_checkout(self):
+        checkout = Path(self.temporary.name) / "agentharbor-checkout"
+        checkout.mkdir()
+        with patch("sys.argv", ["connector.py", "connect", "--project-root", str(self.root)]), \
+             patch.object(Path, "home", return_value=self.home), \
+             patch("connect_setup.clipboard_text", return_value=self.bundle()), \
+             patch("os.getcwd", return_value=str(checkout)):
+            self.assertEqual(connector.main(), 0)
+        self.assertTrue((self.root / ".codex" / "config.toml").exists())
+        self.assertFalse((checkout / ".codex").exists())
+
+    def test_rejects_missing_project_root(self):
+        missing = self.root / "missing"
+        with self.assertRaisesRegex(ValueError, "existing directory"):
+            connect(missing, self.bundle())
+        self.assertFalse(missing.exists())
 
 
 if __name__ == "__main__":

@@ -131,6 +131,8 @@ def write_text(path: Path, content: str, private: bool = False) -> None:
 
 def connect(project_root: Path, raw: str | None = None) -> str:
     project_root = project_root.resolve()
+    if not project_root.is_dir():
+        raise ValueError("Project root must be an existing directory")
     script = Path(__file__).resolve().with_name("memory_mcp.py")
     if not script.is_file():
         raise ValueError("AgentHarbor memory MCP script is missing")
