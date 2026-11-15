@@ -1,20 +1,27 @@
 # AgentHarbor
-Personal cloud dashboard for multi-machine agent tasks and shared project memory.
 
-## First version
+AgentHarbor collects task records and reviewed project memory from local agents. Codex runs in the project code directory; the connector syncs task events to the Go API and provides tools to search memory or submit material for review.
 
-- A local Codex connector records task events and syncs them in batches every 30 seconds.
-- The server stores project, machine, agent, and session task records and supports readback to the connector.
-- The web task menu shows which machine and agent worked on each project.
-- The project memory page reads and edits the actual L3 document in Tencent MemoryCore; L0–L2 are not connected yet.
+## Current implementation
 
-The local A-machine flow has been checked. Connecting a second machine is the next acceptance step.
+- The Python Codex connector queues task events locally and syncs them every 30 seconds.
+- The Go API stores task events, pending memory material, approved entries, and revisions in PostgreSQL.
+- Web and Desktop share the task and memory pages. New sessions receive a small set of approved semantic entries; other memory is available through search.
+- Tencent MemoryCore L3 is no longer a runtime dependency. Earlier L3 plans and acceptance results remain as historical records.
 
-## Start here
+## Code map
 
-- [Requirements](docs/agentharbor/requirements.md)
-- [Minimum acceptance and two-machine deployment plan](docs/agentharbor/acceptance.md)
-- [Local A-machine acceptance record](docs/agentharbor/local-acceptance-a.md)
-- [Codex connector setup](tools/agentharbor-connector/README.md)
+| Path | Role |
+| --- | --- |
+| `apps/` | Web and Desktop entry points; independent Mobile client and documentation site |
+| `packages/` | Shared API and state, business pages, UI primitives, and workspace tooling |
+| `server/` | Go API, SQL queries, and migrations |
+| `tools/agentharbor-connector/` | Local Codex connector and memory tools |
+| `e2e/`, `scripts/`, `examples/` | End-to-end tests, development scripts, and examples |
+| `deploy/`, `docker/` | Deployment configuration |
+| `spec/` | Brief frontend and backend conventions |
+| `docs/agentharbor/` | Requirements, terminology, and historical plans and acceptance records |
 
-See [LICENSE](LICENSE) and [NOTICE](NOTICE) for the source license and attribution.
+Start with the [development guide](agent.md) for current code entry points, [repository rules](AGENTS.md) for engineering constraints, and the [requirements](docs/agentharbor/requirements.md) for product scope. The [frontend](spec/frontend.md) and [backend](spec/backend.md) specs cover the main boundaries; the [connector guide](tools/agentharbor-connector/README.md) covers local setup. Earlier [acceptance results](docs/agentharbor/local-acceptance-a.md) describe the previous MemoryCore-based version.
+
+See [LICENSE](LICENSE) and [NOTICE](NOTICE) for source license and attribution.
