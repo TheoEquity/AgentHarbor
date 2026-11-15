@@ -120,11 +120,15 @@ function ProjectMemory({ wsId, projectId }: { wsId: string; projectId: string })
 
   return (
     <Tabs defaultValue="pending" className="gap-4">
-      <TabsList aria-label={t(($) => $.nav.project_memory)} className="max-w-full overflow-x-auto">
-        <TabsTrigger value="pending" className="px-3">{t(($) => $.project_memory.pending)}</TabsTrigger>
-        <TabsTrigger value="project" className="px-3">{t(($) => $.project_memory.project_entries)}</TabsTrigger>
-        <TabsTrigger value="global" className="px-3">{t(($) => $.project_memory.global_entries)}</TabsTrigger>
-        <TabsTrigger value="settings" className="px-3">{t(($) => $.project_memory.settings)}</TabsTrigger>
+      <TabsList
+        variant="line"
+        aria-label={t(($) => $.nav.project_memory)}
+        className="w-full flex-wrap justify-start gap-x-2 gap-y-2 border-b border-border p-0 group-data-horizontal/tabs:h-auto"
+      >
+        <TabsTrigger value="pending" className="h-10 flex-none px-2 sm:px-3">{t(($) => $.project_memory.pending)}</TabsTrigger>
+        <TabsTrigger value="project" className="h-10 flex-none px-2 sm:px-3">{t(($) => $.project_memory.project_entries)}</TabsTrigger>
+        <TabsTrigger value="global" className="h-10 flex-none px-2 sm:px-3">{t(($) => $.project_memory.global_entries)}</TabsTrigger>
+        <TabsTrigger value="settings" className="h-10 flex-none px-2 sm:px-3">{t(($) => $.project_memory.settings)}</TabsTrigger>
       </TabsList>
       <TabsContent value="pending">
         {materialsQuery.isError ? (
