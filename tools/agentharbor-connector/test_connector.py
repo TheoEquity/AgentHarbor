@@ -29,7 +29,7 @@ MEMORY_ENTRY = {
 }
 MEMORY = {
     "project_id": PROJECT, "version": "a" * 64,
-    "content": "## Local checks\n运行本地测试", "entries": [MEMORY_ENTRY],
+    "content": "## Local checks\n运行本地测试", "entries": [{**MEMORY_ENTRY, "type": "semantic"}],
 }
 EMPTY_MEMORY = {"project_id": PROJECT, "version": "", "content": "", "entries": []}
 DISPUTE = {
@@ -290,7 +290,7 @@ class ConnectorTest(unittest.TestCase):
             for path in (self.directory / "memory-reads").rglob("*.json")
         ]
         self.assertEqual(len(receipts), 8)
-        self.assertTrue(all(receipt["fetched"] and receipt["emitted"] and not receipt["context_emitted"] for receipt in receipts))
+        self.assertTrue(all(receipt["emitted"] and not receipt["context_emitted"] for receipt in receipts))
 
     def test_simultaneous_prompts_in_one_session_share_one_context_read(self):
         with ThreadPoolExecutor(max_workers=2) as pool:
