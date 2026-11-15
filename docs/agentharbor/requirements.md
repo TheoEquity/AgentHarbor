@@ -8,7 +8,7 @@ AgentHarbor 面向个人使用，把几台机器上 Codex、DeepSeek Harness、H
 
 本文整理已经确认的产品范围、使用方式和检查标准。实现建议与待定事项单独列出；文中的目标能力不代表已经开发完成。
 
-下一阶段采用四类记忆，并分别管理内容状态、适用范围和来源版本。详细操作见[下一阶段需求整理](next-stage-requirements.md)，实现方案见[下一阶段技术方案](technical-design-v2.md)。本次只更新文档；原[首版技术方案](technical-design-v1.md)与[最小验收标准](acceptance.md)保留为首版阶段记录，记忆部分的后续设计以本文和 v2 为准。
+下一阶段采用四类记忆，并分别管理内容状态、适用范围和来源版本。当时的操作设想见[下一阶段需求整理](next-stage-requirements.md)，历史实现方案见[下一阶段技术方案](technical-design-v2.md)。原[首版技术方案](technical-design-v1.md)与[最小验收标准](acceptance.md)保留为首版阶段记录；当前代码入口与实现状态见 [agent.md](../../agent.md)。
 
 ## 1 产品目标与范围
 

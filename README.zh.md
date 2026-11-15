@@ -1,3 +1,5 @@
+> AgentHarbor 当前实现与代码入口见 [README.md](README.md) 和 [agent.md](agent.md)。以下保留上游 Multica 的介绍，供了解底座时参考。
+
 <div align="center">
 
 <picture>

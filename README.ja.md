@@ -1,3 +1,5 @@
+> AgentHarbor の現在の実装とコードの入口は [README.md](README.md) と [agent.md](agent.md) を参照してください。以下は基盤となった Multica の紹介です。
+
 <div align="center">
 
 <picture>
