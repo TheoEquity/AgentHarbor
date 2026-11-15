@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -99,7 +100,7 @@ func TestAgentHarborMemoryReviewLifecycle(t *testing.T) {
 		t.Fatalf("pending materials: %+v, %v", listed, err)
 	}
 
-	review := map[string]any{"action": "approve", "scope": "project", "type": "procedural", "title": "Public types", "content": "Check callers before changing public types."}
+	review := map[string]any{"action": "approve", "scope": "project", "type": "semantic", "title": "Public types", "content": "Check callers before changing public types."}
 	var result struct{ Entry struct{ ID string } }
 	if err := json.Unmarshal(call(testHandler.ReviewAgentHarborMemoryMaterial, web(http.MethodPatch, materialID, review), http.StatusOK), &result); err != nil || result.Entry.ID == "" {
 		t.Fatalf("approve: %+v, %v", result, err)
@@ -139,7 +140,7 @@ func TestAgentHarborMemoryReviewLifecycle(t *testing.T) {
 		t.Fatalf("incomplete memory history: %+v", record)
 	}
 	edit := web(http.MethodPatch, "", map[string]any{
-		"action": "revise", "expected_revision": 1, "type": "procedural",
+		"action": "revise", "expected_revision": 1, "type": "semantic",
 		"title": "Check public types", "content": "Check callers before changing public types.",
 	})
 	chi.RouteContext(edit.Context()).URLParams.Add("entryId", result.Entry.ID)
@@ -169,4 +170,37 @@ func TestAgentHarborMemoryReviewLifecycle(t *testing.T) {
 	call(testHandler.SubmitAgentHarborMemoryMaterial, scoped(http.MethodPost, project, map[string]string{
 		"request_id": uuid.NewString(), "source_text": "Recording can continue independently of retrieval.",
 	}), http.StatusCreated)
+}
+
+func TestAgentHarborMemoryStartupOnlyIncludesSemanticEntries(t *testing.T) {
+	project := dbfx.Project(t, "Memory startup type filter")
+	entry := func(kind, title string) {
+		dbfx.Insert(t, "agentharbor_memory_entry", testutil.Cols{
+			"workspace_id": testWorkspaceID, "project_id": project, "owner_id": testUserID,
+			"scope": "project", "type": kind, "title": title, "content": title,
+		})
+	}
+	entry("semantic", "Keep this project fact")
+	entry("procedural", "Fetch this procedure on demand")
+	for range 100 {
+		entry("episodic", "Fetch this event on demand")
+	}
+	token, err := signAgentHarborMemoryToken(agentHarborMemoryTokenClaims{
+		UserID: testUserID, WorkspaceID: testWorkspaceID, ProjectID: project,
+		ExpiresAt: time.Now().Add(time.Hour).Unix(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := newRequest(http.MethodGet, "/api/agentharbor/memory/context", nil)
+	request.Header.Set("Authorization", "Bearer "+token)
+	var snapshot struct {
+		Content string                  `json:"content"`
+		Entries []struct{ Type string } `json:"entries"`
+	}
+	testutil.Call(t, testHandler.GetScopedAgentHarborMemoryContext, request).Want(http.StatusOK).JSON(&snapshot)
+	if len(snapshot.Entries) != 1 || snapshot.Entries[0].Type != "semantic" ||
+		!strings.Contains(snapshot.Content, "Keep this project fact") {
+		t.Fatalf("startup should include only semantic memory after many recent events: %+v", snapshot)
+	}
 }

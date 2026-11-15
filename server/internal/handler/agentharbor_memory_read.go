@@ -178,7 +178,7 @@ func (h *Handler) GetAgentHarborMemorySnapshot(w http.ResponseWriter, r *http.Re
 }
 
 func (h *Handler) writeMemoryContext(w http.ResponseWriter, ctx context.Context, scope agentHarborMemoryScope) {
-	rows, err := h.readableMemoryEntries(ctx, scope, "", "", 100, true)
+	rows, err := h.readableMemoryEntries(ctx, scope, "semantic", "", 100, true)
 	if err != nil {
 		memoryStoreError(w, err)
 		return
@@ -186,9 +186,6 @@ func (h *Handler) writeMemoryContext(w http.ResponseWriter, ctx context.Context,
 	var content strings.Builder
 	entries := make([]db.AgentharborMemoryEntry, 0)
 	for _, row := range rows {
-		if row.Type == "episodic" {
-			continue
-		}
 		block := fmt.Sprintf("## %s (%s)\nEntry %s, revision %d\n%s\n\n",
 			row.Title, row.Scope, uuid.UUID(row.ID.Bytes).String(), row.Revision, row.Content)
 		if content.Len()+len(block) > 2000 {
