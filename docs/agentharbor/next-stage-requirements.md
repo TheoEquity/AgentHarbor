@@ -63,15 +63,15 @@ CIS 5480 修复一个普通 Bug 后，相关经历可以先上传。上传本身
 
 ## 2 记忆架构与存储
 
-### 2.1 当前实现事实
+### 2.1 改造前的实现事实
 
-当前项目接通的是 MemoryCore L3 核心记忆：每个项目对应一份核心文档，当前本机存储落在项目隔离目录中的 `persona.md`。MCP 写入会把一条会话记录追加到这份文档，读取时整份返回。网页编辑则保存整份文档。
+本方案写作时，项目接通的是 MemoryCore L3 核心记忆：每个项目对应一份核心文档，当时本机存储落在项目隔离目录中的 `persona.md`。MCP 写入会把一条会话记录追加到这份文档，读取时整份返回。网页编辑则保存整份文档。当前实现见 [agent.md](../../agent.md) 第 3 节。
 
-目前没有接通完整四层处理流程，也没有实现待整理材料与有效知识的分开管理。腾讯系统具有其他层的代码，不代表 AgentHarbor 已使用这些能力。
+当时没有接通完整四层处理流程，也没有实现待整理材料与有效知识的分开管理。腾讯系统具有其他层的代码，不代表 AgentHarbor 已使用这些能力。
 
-当前接入只处理项目范围的记忆，尚未实现本次提出的全局通用记忆和按项目启用全局记忆的设置。
+当时接入只处理项目范围的记忆，尚未实现本次提出的全局通用记忆和按项目启用全局记忆的设置。
 
-实现依据：[MemoryCore 客户端](../../server/internal/agentharbormemory/client.go)、[项目记忆接口](../../server/internal/handler/agentharbor_memory.go)、[记忆 MCP 工具](../../tools/agentharbor-connector/memory_mcp.py)。
+历史实现依据：[MemoryCore 客户端](https://github.com/TheoEquity/AgentHarbor/blob/19832710d61502249b86030b9f853b2f51380b4e/server/internal/agentharbormemory/client.go)、[项目记忆接口](https://github.com/TheoEquity/AgentHarbor/blob/19832710d61502249b86030b9f853b2f51380b4e/server/internal/handler/agentharbor_memory.go)。
 
 ### 2.2 下一阶段需要满足的能力
 
@@ -81,7 +81,7 @@ CIS 5480 修复一个普通 Bug 后，相关经历可以先上传。上传本身
 - 能追溯有效知识的来源及更新情况。
 - 能提供当前会话需要的有效部分，避免持续把所有历史材料堆进上下文。
 
-已确定以独立条目作为管理单位，不再整份 L3 追加后全量读取。v2 建议使用现有 PostgreSQL 保存权威条目、来源、状态和修订记录；供智能体读取的简短摘要由有效条目生成。该存储落点是技术方案，尚未迁移；不要求一条记忆必须等于一个磁盘文件。
+已确定以独立条目作为管理单位，不再整份 L3 追加后全量读取。当前代码已使用 PostgreSQL 保存待审材料、条目和修订；本机旧 L3 核对结果见 [agent.md](../../agent.md) 第 3 节，其他部署仍须分别核对。不要求一条记忆必须等于一个磁盘文件。
 
 ## 3 上云与多机轻量接入
 

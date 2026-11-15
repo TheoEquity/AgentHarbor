@@ -2,15 +2,15 @@
 
 日期：2026-11-07
 
-状态：四类记忆、独立条目、生命周期及项目或全局范围已获用户确认。本文是后续实现方案，不是完成记录；本轮只更新文档，不改代码、不部署、不迁移数据。存储落点、控件布局和分阶段实现属于技术建议，未确认的默认值与采集范围单独列出。
+状态：记忆改造前的设计记录，不是当前实现清单。当前代码入口和本机旧 L3 核对结果见 [agent.md](../../agent.md) 第 3 节；其他部署是否已导入须核对各自数据，不能从本文推断。本方案写作时只更新文档，未改代码或迁移数据。
 
-对应需求：[完整需求](requirements.md)、[下一阶段需求与操作](next-stage-requirements.md)。[v1](technical-design-v1.md)保留首版历史设计；后续记忆路径以本文为准。[首版验收记录](local-acceptance-a.md)不能作为本文新增能力的验收证据。
+对应需求：[完整需求](requirements.md)、[下一阶段需求与操作](next-stage-requirements.md)。[v1](technical-design-v1.md)保留首版历史设计；本文记录当时的改造方案，当前行为以代码为准。[首版验收记录](local-acceptance-a.md)不能作为本文新增能力的验收证据。
 
 ## 1 现状与改造边界
 
-当前实际接入是每项目一份 MemoryCore L3 文档：网页整份保存，MCP 读整份或追加一段；没有独立条目的候选、有效、停用状态。后端计算的内容哈希用于表示版本，但网页更新没有要求提交旧版本，进程内互斥锁也不能阻止旧页面覆盖新内容。依据：[客户端](../../server/internal/agentharbormemory/client.go)、[记忆接口](../../server/internal/handler/agentharbor_memory.go)。
+改造前实际接入是每项目一份 MemoryCore L3 文档：网页整份保存，MCP 读整份或追加一段；没有独立条目的候选、有效、停用状态。后端计算的内容哈希用于表示版本，但网页更新没有要求提交旧版本，进程内互斥锁也不能阻止旧页面覆盖新内容。历史依据：[客户端](https://github.com/TheoEquity/AgentHarbor/blob/19832710d61502249b86030b9f853b2f51380b4e/server/internal/agentharbormemory/client.go)、[记忆接口](https://github.com/TheoEquity/AgentHarbor/blob/19832710d61502249b86030b9f853b2f51380b4e/server/internal/handler/agentharbor_memory.go)。
 
-当前 MCP 只在调用工具时访问 HTTP。另有连接程序按周期下载记忆缓存，并在 `UserPromptSubmit` 提供缓存；这不是新会话直接取云端的目标行为。任务链路可保留：Hook → 本机持久队列 → 每 30 秒批量 HTTP 上传 → 任务页。依据：[MCP](../../tools/agentharbor-connector/memory_mcp.py)、[连接程序](../../tools/agentharbor-connector/connector.py)。
+改造前 MCP 只在调用工具时访问 HTTP。另有连接程序按周期下载记忆缓存，并在 `UserPromptSubmit` 提供缓存；这不是新会话直接取云端的目标行为。任务链路可保留：Hook → 本机持久队列 → 每 30 秒批量 HTTP 上传 → 任务页。当前启动读取见 [连接程序](../../tools/agentharbor-connector/connector.py)。
 
 本轮架构改造聚焦记忆的数据管理与取回：保留现有底座、项目、身份校验、任务事件和 MCP 外壳。工作仍从本地智能体开始，网页不派发任务，不上传整个代码目录，不修改 `AGENTS.md`。自动导入全部历史会话、新增其他智能体适配、自动生成或执行 Skill 不作为此次记忆改造的前置条件。
 
@@ -136,7 +136,7 @@ MCP 本身不自动执行启动读取。需要在实际 Codex 版本支持的会
 | LangGraph + LangMem | LangGraph 线程状态承担短期记忆；LangMem 有语义、情景抽取示例及程序提示优化实现 | 四类可以组合；不是安装后自动获得完整治理流程。优先参考自定义条目结构及返回提炼结果的接口 |
 | Deep Agents | 会话状态、启动读取文件记忆、按需加载 Skill；情景查询仍需应用接入 | 可借鉴启动提供与按任务加载；不为使用它改写本项目 `AGENTS.md` 或替换现有 Codex 会话 |
 | ReMe | 当前 main 为来源、daily、digest、metadata；旧版 v0.2.0.6 是 Personal、Task、Tool、Working | 有收集与提炼参考，但它所称"四类/四层"不是这里的四类，不能直接等同 |
-| 腾讯 MemoryCore | 当前接入使用 L3；上游 L0 原始材料 → L1 原子 → L2 场景 → L3 核心是处理分层 | 可评估提炼、检索、Skill 等局部能力，不把默认流程视为已经实现候选确认、全局开关和旧版本更新校验 |
+| 腾讯 MemoryCore | 改造前接入使用 L3；上游 L0 原始材料 → L1 原子 → L2 场景 → L3 核心是处理分层 | 可评估提炼、检索、Skill 等局部能力，不把默认流程视为已经实现候选确认、全局开关和旧版本更新校验 |
 
 原始依据：
 

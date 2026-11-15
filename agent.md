@@ -25,14 +25,14 @@ AgentHarbor 先供个人使用，管理多台机器、多个项目和参与工�
 | 入口 | 用途 |
 | --- | --- |
 | [完整需求](docs/agentharbor/requirements.md) | 当前产品范围和页面要求 |
-| [下一阶段需求](docs/agentharbor/next-stage-requirements.md) | 已确认的记忆方向、操作流程与待定事项 |
-| [下一阶段技术方案](docs/agentharbor/technical-design-v2.md) | 四类记忆、独立条目、生命周期和作用域的后续方案 |
+| [下一阶段需求](docs/agentharbor/next-stage-requirements.md) | 记忆改造前的需求记录；现状以本文第 3 节和代码为准 |
+| [下一阶段技术方案](docs/agentharbor/technical-design-v2.md) | 四类记忆改造的设计记录；现状以本文第 3 节和代码为准 |
 | [首版技术方案](docs/agentharbor/technical-design-v1.md) | 两机部署及早期设计；其中建议不等于当前实现 |
 | [最小验收与部署](docs/agentharbor/acceptance.md) | 本机模拟云端、另一台机器接入的验收范围 |
 | [本机验收记录](docs/agentharbor/local-acceptance-a.md) | 历史检查结果，不代表当前环境仍处于相同状态 |
 | [连接程序说明](tools/agentharbor-connector/README.md) | 现有本地采集与同步方式 |
 
-首版方案与验收记录保留旧阶段事实，后续记忆设计以当前完整需求、下一阶段需求和 v2 方案为准；本文第 5 节是开发摘要。发现冲突时，核对用户最新明确要求、实际代码和验证记录；不能把方案文字或 HTML 模拟效果当作实现证据。
+首版方案、下一阶段需求与 v2 方案保留当时的设计和历史事实；本文第 3 节记录当前代码入口，第 5 节是开发摘要。发现冲突时，核对用户最新明确要求、实际代码和验证记录；不能把方案文字或 HTML 模拟效果当作实现证据。
 
 ## 3. 当前实现与代码入口
 
@@ -49,6 +49,8 @@ AgentHarbor 先供个人使用，管理多台机器、多个项目和参与工�
 | 前端查询 | 共享任务与记忆查询，沿用工作区隔离和 Query 缓存 | [queries.ts](packages/core/agentharbor/queries.ts) |
 
 Codex 新会话通过启动 Hook 直接读取服务端的简短上下文。任务页回执记录读取结果、Hook 是否输出上下文，以及条目 ID 和版本。
+
+2026-11-15 在本机 `agentharbor-v1` 环境核对旧 L3：MemoryCore 卷中两份 `persona.md` 分别属于 CIS 5480 和 Local Codex Acceptance；PostgreSQL 中对应有 2 条和 1 条待审素材，素材上下文均包含所属旧文档的完整原文及匹配的 SHA-256。已批准记忆条目为 0。另做了仓库外的只读备份。此结果只证明该本机环境的导入状态，不代表其他部署已迁移；原文仍需人工审核后才能成为有效知识。
 
 ## 4. 架构边界
 
