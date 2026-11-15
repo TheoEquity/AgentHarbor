@@ -262,6 +262,7 @@ import { createRequestId, createSafeId } from "../utils";
 import { getCurrentSlug } from "../platform/workspace-storage";
 import { parseWithFallback } from "./schema";
 import type {
+  AgentHarborMemoryAccessToken,
   AgentHarborMemoryEntry,
   AgentHarborMemoryHistory,
   AgentHarborMemoryMaterial,
@@ -365,6 +366,7 @@ import {
   ListProjectsResponseSchema,
   AgentHarborTasksResponseSchema,
   AgentHarborMemoryEntriesSchema,
+  AgentHarborMemoryAccessTokenSchema,
   AgentHarborMemoryEntrySchema,
   AgentHarborMemoryHistorySchema,
   AgentHarborMemoryMaterialsSchema,
@@ -4348,6 +4350,13 @@ export class ApiClient {
   async getAgentHarborMemorySettings(projectId: string): Promise<AgentHarborMemorySettings> {
     return this.fetchAgentHarborMemory(
       projectId, "settings", AgentHarborMemorySettingsSchema, "GET /api/projects/:id/memory/settings",
+    );
+  }
+
+  async issueAgentHarborMemoryToken(projectId: string): Promise<AgentHarborMemoryAccessToken> {
+    return this.fetchAgentHarborMemory(
+      projectId, "access-token", AgentHarborMemoryAccessTokenSchema,
+      "POST /api/projects/:id/memory/access-token", { method: "POST" },
     );
   }
 

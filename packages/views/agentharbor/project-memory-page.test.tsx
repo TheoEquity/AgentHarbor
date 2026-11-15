@@ -3,11 +3,14 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api } from "@multica/core/api";
+import { copyText } from "@multica/ui/lib/clipboard";
 import type { AgentHarborMemoryEntry, AgentHarborMemoryMaterial, AgentHarborMemorySettings } from "@multica/core/api/schemas";
 import { agentHarborMemoryEntriesOptions } from "@multica/core/agentharbor/queries";
 import { projectListOptions } from "@multica/core/projects/queries";
 import { renderWithI18n } from "../test/i18n";
 import { ProjectMemoryPage } from "./project-memory-page";
+
+vi.mock("@multica/ui/lib/clipboard", () => ({ copyText: vi.fn() }));
 
 vi.mock("@multica/core/paths", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@multica/core/paths")>();
@@ -25,6 +28,8 @@ vi.mock("@multica/core/api", async (importOriginal) => {
       updateAgentHarborMemoryEntry: vi.fn(),
       getAgentHarborMemorySettings: vi.fn(),
       putAgentHarborMemorySettings: vi.fn(),
+      issueAgentHarborMemoryToken: vi.fn(),
+      getBaseUrl: vi.fn(() => "https://api.example.test"),
     },
   };
 });
@@ -63,6 +68,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(api.getBaseUrl).mockReturnValue("https://api.example.test");
   vi.mocked(api.listAgentHarborMemoryMaterials).mockResolvedValue([source]);
   vi.mocked(api.listAgentHarborMemoryEntries).mockImplementation(async (_projectId, scope) =>
     scope === "project" ? [projectEntry] : [],
@@ -72,6 +78,22 @@ beforeEach(() => {
 });
 
 describe("Project memory page", () => {
+  it("copies a scoped Codex connection without showing its token", async () => {
+    vi.mocked(api.issueAgentHarborMemoryToken).mockResolvedValue({
+      token: "ahm_example", projectId: "project", expiresAt: "2026-12-14T10:00:00Z",
+    });
+    vi.mocked(copyText).mockResolvedValue(true);
+    const { user } = renderPage();
+    await user.click(screen.getByRole("tab", { name: "Settings" }));
+    await user.click(await screen.findByRole("button", { name: "Copy connection info" }));
+    expect(api.issueAgentHarborMemoryToken).toHaveBeenCalledWith("project");
+    expect(JSON.parse(vi.mocked(copyText).mock.calls[0]?.[0] ?? "{}")).toEqual({
+      version: 1, api_url: "https://api.example.test", project_id: "project",
+      token: "ahm_example", expires_at: "2026-12-14T10:00:00Z",
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent("Copied");
+    expect(screen.queryByText("ahm_example")).not.toBeInTheDocument();
+  });
   it("approves edited material into general memory and opens authorized provenance and history", async () => {
     const reviewed = { ...source, status: "processed" as const };
     const approved = {

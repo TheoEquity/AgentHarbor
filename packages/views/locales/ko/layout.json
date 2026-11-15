@@ -104,6 +104,11 @@
     "use_global": "공통 메모리도 사용",
     "save_settings": "설정 저장",
     "settings_saved": "설정을 저장했습니다",
+    "connect_codex": "Codex 연결",
+    "connect_note": "30일 동안 유효한 프로젝트 메모리 토큰을 복사한 다음 Codex에 AgentHarbor 저장소에서 아래 명령을 실행하도록 요청하세요. 복사한 내용은 채팅에 붙여넣지 마세요.",
+    "copy_connection": "연결 정보 복사",
+    "connection_copied": "복사했습니다. Codex에 위 명령을 실행하도록 요청하세요.",
+    "connection_error": "연결 정보를 복사할 수 없습니다. 다시 시도하세요.",
     "types": {
       "episodic": "일화 기억",
       "semantic": "의미 기억",

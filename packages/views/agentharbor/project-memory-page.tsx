@@ -19,6 +19,7 @@ import { projectKeys, projectListOptions } from "@multica/core/projects/queries"
 import { BookOpenText, RefreshCw } from "@multica/ui/icons";
 import { IconButton } from "@multica/ui/components/common/icon-button";
 import { Button } from "@multica/ui/components/ui/button";
+import { copyText } from "@multica/ui/lib/clipboard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@multica/ui/components/ui/select";
 import { Switch } from "@multica/ui/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@multica/ui/components/ui/tabs";
@@ -30,6 +31,7 @@ import { EntryEditor, MaterialReview } from "./project-memory-page-editor";
 
 const EMPTY_ENTRIES: AgentHarborMemoryEntry[] = [];
 const EMPTY_MATERIALS: AgentHarborMemoryMaterial[] = [];
+const CONNECT_COMMAND = "py -3 tools/agentharbor-connector/connector.py connect";
 
 export function ProjectMemoryPage() {
   const { t } = useT("layout");
@@ -235,6 +237,8 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
   const queryClient = useQueryClient();
   const query = useQuery(agentHarborMemorySettingsOptions(wsId, projectId));
   const [draft, setDraft] = useState<AgentHarborMemorySettings | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [connectStatus, setConnectStatus] = useState<"copied" | "error" | null>(null);
   const save = useMutation({
     mutationFn: (settings: AgentHarborMemorySettings) => api.putAgentHarborMemorySettings(projectId, settings),
     onSuccess: (settings) => {
@@ -255,32 +259,67 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
   ] as const;
   const changed = fields.some(({ key }) => settings[key] !== saved[key]);
 
+  async function copyCodexConnection() {
+    setConnecting(true);
+    setConnectStatus(null);
+    try {
+      const apiUrl = new URL(api.getBaseUrl() || window.location.origin, window.location.href);
+      if (apiUrl.protocol !== "http:" && apiUrl.protocol !== "https:") throw new Error("Invalid API URL");
+      const issued = await api.issueAgentHarborMemoryToken(projectId);
+      if (issued.projectId !== projectId) throw new Error("Wrong project");
+      const copied = await copyText(JSON.stringify({
+        version: 1,
+        api_url: apiUrl.href.replace(/\/$/, ""),
+        project_id: issued.projectId,
+        token: issued.token,
+        expires_at: issued.expiresAt,
+      }));
+      setConnectStatus(copied ? "copied" : "error");
+    } catch {
+      setConnectStatus("error");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
   return (
-    <form className="space-y-4 rounded-xl border border-surface-border bg-card p-4" onSubmit={(event) => {
-      event.preventDefault();
-      if (changed && !save.isPending) save.mutate(settings);
-    }}>
-      {fields.map(({ key, label, ...field }) => (
-        <SettingRow
-          key={key}
-          label={label}
-          description={"description" in field ? field.description : undefined}
-          disabled={save.isPending || ("disabled" in field && field.disabled)}
-          checked={settings[key]}
-          onChange={(checked) => {
-            setDraft({ ...settings, [key]: checked });
-            save.reset();
-          }}
-        />
-      ))}
-      {save.isError && <p role="alert" className="text-destructive">{t(($) => $.project_memory.save_error)}</p>}
-      {save.isSuccess && <p role="status" className="text-muted-foreground">{t(($) => $.project_memory.settings_saved)}</p>}
-      <div className="flex justify-end">
-        <Button type="submit" size="sm" disabled={!changed || save.isPending} aria-busy={save.isPending}>
-          {t(($) => $.project_memory.save_settings)}
+    <div className="space-y-4">
+      <form className="space-y-4 rounded-xl border border-surface-border bg-card p-4" onSubmit={(event) => {
+        event.preventDefault();
+        if (changed && !save.isPending) save.mutate(settings);
+      }}>
+        {fields.map(({ key, label, ...field }) => (
+          <SettingRow
+            key={key}
+            label={label}
+            description={"description" in field ? field.description : undefined}
+            disabled={save.isPending || ("disabled" in field && field.disabled)}
+            checked={settings[key]}
+            onChange={(checked) => {
+              setDraft({ ...settings, [key]: checked });
+              save.reset();
+            }}
+          />
+        ))}
+        {save.isError && <p role="alert" className="text-destructive">{t(($) => $.project_memory.save_error)}</p>}
+        {save.isSuccess && <p role="status" className="text-muted-foreground">{t(($) => $.project_memory.settings_saved)}</p>}
+        <div className="flex justify-end">
+          <Button type="submit" size="sm" disabled={!changed || save.isPending} aria-busy={save.isPending}>
+            {t(($) => $.project_memory.save_settings)}
+          </Button>
+        </div>
+      </form>
+      <section className="space-y-3 rounded-xl border border-surface-border bg-card p-4">
+        <h2 className="font-medium">{t(($) => $.project_memory.connect_codex)}</h2>
+        <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_note)}</p>
+        <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-caption">{CONNECT_COMMAND}</code>
+        <Button type="button" variant="outline" size="sm" disabled={connecting} aria-busy={connecting} onClick={() => void copyCodexConnection()}>
+          {t(($) => $.project_memory.copy_connection)}
         </Button>
-      </div>
-    </form>
+        {connectStatus === "copied" && <p role="status" className="text-caption text-muted-foreground">{t(($) => $.project_memory.connection_copied)}</p>}
+        {connectStatus === "error" && <p role="alert" className="text-caption text-destructive">{t(($) => $.project_memory.connection_error)}</p>}
+      </section>
+    </div>
   );
 }
 

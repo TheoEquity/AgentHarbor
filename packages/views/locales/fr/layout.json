@@ -104,6 +104,11 @@
     "use_global": "Inclure la mémoire générale",
     "save_settings": "Enregistrer les paramètres",
     "settings_saved": "Paramètres enregistrés",
+    "connect_codex": "Connecter Codex",
+    "connect_note": "Copiez un jeton de mémoire du projet valable 30 jours, puis demandez à Codex d'exécuter cette commande depuis le dépôt AgentHarbor. Ne collez pas le contenu copié dans la discussion.",
+    "copy_connection": "Copier les informations de connexion",
+    "connection_copied": "Copié. Demandez à Codex d'exécuter la commande ci-dessus.",
+    "connection_error": "Impossible de copier les informations de connexion. Réessayez.",
     "types": {
       "episodic": "Épisodique",
       "semantic": "Sémantique",

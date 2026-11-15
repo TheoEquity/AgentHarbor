@@ -170,6 +170,20 @@ function mockMemoryResponses(...responses: unknown[]) {
 describe("AgentHarbor reviewed memory response boundary", () => {
   const client = new ApiClient("https://api.example.test");
 
+  it("issues a scoped memory token and rejects a malformed response", async () => {
+    const projectId = "ba9128a4-51b5-4f8a-8449-c9696e3a9def";
+    const fetchMock = mockMemoryResponses(
+      { token: "ahm_example", project_id: projectId, expires_at: "2026-12-14T10:00:00Z" },
+      { token: "account_token", project_id: projectId, expires_at: "2026-12-14T10:00:00Z" },
+    );
+    expect(await client.issueAgentHarborMemoryToken(projectId)).toEqual({
+      token: "ahm_example", projectId, expiresAt: "2026-12-14T10:00:00Z",
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`https://api.example.test/api/projects/${projectId}/memory/access-token`);
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: "POST" });
+    await expect(client.issueAgentHarborMemoryToken(projectId)).rejects.toThrow("Malformed response");
+  });
+
   it("normalizes source material and sends explicit merge options", async () => {
     const fetchMock = mockMemoryResponses(
       { materials: [wireMaterial] },

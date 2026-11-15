@@ -104,6 +104,11 @@
     "use_global": "Incluir memoria general",
     "save_settings": "Guardar ajustes",
     "settings_saved": "Ajustes guardados",
+    "connect_codex": "Conectar Codex",
+    "connect_note": "Copia un token de memoria del proyecto válido durante 30 días y pide a Codex que ejecute este comando desde el repositorio AgentHarbor. No pegues el contenido copiado en el chat.",
+    "copy_connection": "Copiar datos de conexión",
+    "connection_copied": "Copiado. Pide a Codex que ejecute el comando anterior.",
+    "connection_error": "No se pudieron copiar los datos de conexión. Inténtalo de nuevo.",
     "types": {
       "episodic": "Episódica",
       "semantic": "Semántica",

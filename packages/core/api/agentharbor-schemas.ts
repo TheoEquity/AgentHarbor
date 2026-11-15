@@ -195,12 +195,23 @@ export const AgentHarborMemorySettingsSchema = z.object({
   useGlobal: settings.use_global,
 }));
 
+export const AgentHarborMemoryAccessTokenSchema = z.object({
+  token: z.string().startsWith("ahm_"),
+  project_id: z.string().uuid(),
+  expires_at: z.string().datetime({ offset: true }),
+}).transform(({ token, project_id, expires_at }) => ({
+  token,
+  projectId: project_id,
+  expiresAt: expires_at,
+}));
+
 export type AgentHarborMemoryMaterial = z.infer<typeof AgentHarborMemoryMaterialSchema>;
 export type AgentHarborMemoryEntry = z.infer<typeof AgentHarborMemoryEntrySchema>;
 export type AgentHarborMemoryHistory = z.infer<typeof AgentHarborMemoryHistorySchema>;
 export type AgentHarborMemoryRevision = z.infer<typeof AgentHarborMemoryRevisionSchema>;
 export type AgentHarborMemoryReview = z.infer<typeof AgentHarborMemoryReviewSchema>;
 export type AgentHarborMemorySettings = z.infer<typeof AgentHarborMemorySettingsSchema>;
+export type AgentHarborMemoryAccessToken = z.infer<typeof AgentHarborMemoryAccessTokenSchema>;
 
 export interface AgentHarborMemoryDraft {
   type: AgentHarborMemoryType;

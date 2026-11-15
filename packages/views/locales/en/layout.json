@@ -104,6 +104,11 @@
     "use_global": "Include general memory",
     "save_settings": "Save settings",
     "settings_saved": "Settings saved",
+    "connect_codex": "Connect Codex",
+    "connect_note": "Copy a 30-day project memory token, then ask Codex to run this command from the AgentHarbor repository. Keep the copied text out of chat.",
+    "copy_connection": "Copy connection info",
+    "connection_copied": "Copied. Ask Codex to run the command above.",
+    "connection_error": "Unable to copy connection info. Try again.",
     "types": {
       "episodic": "Episodic",
       "semantic": "Semantic",

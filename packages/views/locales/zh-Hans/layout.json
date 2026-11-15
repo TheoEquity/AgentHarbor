@@ -104,6 +104,11 @@
     "use_global": "同时使用通用记忆",
     "save_settings": "保存设置",
     "settings_saved": "设置已保存",
+    "connect_codex": "连接 Codex",
+    "connect_note": "复制有效期为 30 天的项目记忆令牌，再让 Codex 在 AgentHarbor 仓库运行下面的命令。不要把复制的内容发到聊天里。",
+    "copy_connection": "复制连接信息",
+    "connection_copied": "已复制。让 Codex 运行上面的命令即可。",
+    "connection_error": "复制连接信息失败，请重试。",
     "types": {
       "episodic": "事件记忆",
       "semantic": "知识记忆",

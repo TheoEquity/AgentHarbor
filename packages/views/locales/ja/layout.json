@@ -104,6 +104,11 @@
     "use_global": "共通メモリも使用",
     "save_settings": "設定を保存",
     "settings_saved": "設定を保存しました",
+    "connect_codex": "Codex を接続",
+    "connect_note": "30 日間有効なプロジェクトメモリのトークンをコピーし、AgentHarbor リポジトリで以下のコマンドを実行するよう Codex に依頼してください。コピーした内容はチャットに貼らないでください。",
+    "copy_connection": "接続情報をコピー",
+    "connection_copied": "コピーしました。Codex に上記のコマンドを実行させてください。",
+    "connection_error": "接続情報をコピーできませんでした。もう一度お試しください。",
     "types": {
       "episodic": "エピソード記憶",
       "semantic": "意味記憶",
