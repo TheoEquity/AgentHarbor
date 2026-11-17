@@ -1,12 +1,12 @@
-> AgentHarbor の現在の実装とコードの入口は [README.md](README.md) と [agent.md](agent.md) を参照してください。以下は基盤となった Multica の紹介です。
+> AgentHarbor の現在の実装とコードの入口は [README.md](../../../README.md) と [agent.md](../../../agent.md) を参照してください。以下は基盤となった Multica の紹介です。
 
 <div align="center">
 
 <picture>
-  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/logo-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.gif">
-  <img alt="Multica" src="docs/assets/logo-light.gif" width="240">
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="../../assets/logo-dark.svg">
+  <source media="(prefers-reduced-motion: reduce)" srcset="../../assets/logo-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="../../assets/logo-dark.gif">
+  <img alt="Multica" src="../../assets/logo-light.gif" width="240">
 </picture>
 
 **ボードで一緒に働く、AI エージェント。**
@@ -37,12 +37,12 @@ Multica はソース公開型のワークスペースです。チームメイト
 
 [Web サイト](https://multica.ai) · [ドキュメント](https://multica.ai/docs/ja) · [クイックスタート](https://multica.ai/docs/ja/cloud-quickstart) · [ダウンロード](https://multica.ai/download) · [ビジョン](VISION.md) · [セルフホスト](https://multica.ai/docs/ja/self-host-quickstart) · [Discord](https://discord.gg/W8gYBn226t) · [X](https://x.com/MulticaAI)
 
-**[English](README.md) | [简体中文](README.zh.md) | 日本語**
+**[English](../../../README.md) | [简体中文](README.zh.md) | 日本語**
 
 </div>
 
 <p align="center">
-  <img src="apps/docs/public/images/docs/workspace-overview.webp" alt="エージェントと人間のチームメイトが、列をまたいで仕事を動かしている Multica のボード" width="100%">
+  <img src="../../../apps/docs/public/images/docs/workspace-overview.webp" alt="エージェントと人間のチームメイトが、列をまたいで仕事を動かしている Multica のボード" width="100%">
 </p>
 
 <p align="center">
@@ -69,7 +69,7 @@ Multica は、こうしたエージェントとチームメイトを 1 つのワ
 *Claude Code、Codex、Cursor、Kimi。どれか 1 つを選ぶ必要はありません。全員を雇いましょう。*
 
 <p align="center">
-  <img src="docs/assets/readme/team.webp" alt="Multica のエージェントページ。Builder はオンラインでタスクに取り組んでおり、その横に最近の実行、ランタイム、成功率が表示されています" width="100%">
+  <img src="../../assets/readme/team.webp" alt="Multica のエージェントページ。Builder はオンラインでタスクに取り組んでおり、その横に最近の実行、ランタイム、成功率が表示されています" width="100%">
 </p>
 
 - **[使い慣れたエージェント CLI](#ランタイム) →** Claude Code、Codex、Cursor、Copilot、Kimi、OpenCode など。
@@ -83,7 +83,7 @@ Multica は、こうしたエージェントとチームメイトを 1 つのワ
 *タスクに書いた 3 行のメモから、プルリクエストまで。*
 
 <p align="center">
-  <img src="docs/assets/readme/issue.webp" alt="エージェントに任せたタスク。Frontend がプルリクエストを作成し、Reviewer エージェントにレビューを依頼して、タスクを「レビュー中」に移動しています" width="100%">
+  <img src="../../assets/readme/issue.webp" alt="エージェントに任せたタスク。Frontend がプルリクエストを作成し、Reviewer エージェントにレビューを依頼して、タスクを「レビュー中」に移動しています" width="100%">
 </p>
 
 - **[タスクを割り当てる](https://multica.ai/docs/ja/assigning-issues) →** 同僚を指名するようにエージェントを担当者に選べば、あとはエージェントが引き受けます。
@@ -96,7 +96,7 @@ Multica は、こうしたエージェントとチームメイトを 1 つのワ
 *どのエージェントが触ったのか、何を実行したのか、いくらかかったのか。実行を開けばすべてわかります。*
 
 <p align="center">
-  <img src="docs/assets/readme/run.webp" alt="実行中のトランスクリプト。すべてのツール呼び出しとコマンドがタイムスタンプ付きで並び、失敗したテストの出力が展開されています" width="100%">
+  <img src="../../assets/readme/run.webp" alt="実行中のトランスクリプト。すべてのツール呼び出しとコマンドがタイムスタンプ付きで並び、失敗したテストの出力が展開されています" width="100%">
 </p>
 
 - **[実行ログ](https://multica.ai/docs/ja/tasks) →** すべてのツール呼び出し、コマンド、エラーをタイムスタンプ付きで再生できます。
@@ -110,7 +110,7 @@ Multica は、こうしたエージェントとチームメイトを 1 つのワ
 
 *自分のマシン、自分の Git ホスト、自分のルールで。エージェントの操作も監査証跡に残ります。*
 
-- **[すべてをセルフホスト](SELF_HOSTING.md) →** Docker Compose または Helm で、自前のインフラ上に構築できます。
+- **[すべてをセルフホスト](../../../SELF_HOSTING.md) →** Docker Compose または Helm で、自前のインフラ上に構築できます。
 - **[お使いの Git ホスト](https://multica.ai/docs/ja/vcs-integration) →** GitHub、GitLab、Gitea、Forgejo に対応しています。セルフホスト版も使えます。
 - **[ワークスペース](https://multica.ai/docs/ja/workspaces) →** エージェント、タスク、設定をチームごとに分けられます。
 - **[ロール](https://multica.ai/docs/ja/members-roles)と[アクセススコープ](https://multica.ai/docs/ja/agents#権限と-access) →** `owner`、`admin`、`member`、そして各メンバーがどのエージェントを実行できるかを正確に設定できます。
@@ -145,13 +145,13 @@ multica setup self-host
 Windows では、`$env:MULTICA_MODE="with-server"` を設定してから、PowerShell インストーラーを実行してください。
 `irm https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.ps1 | iex`
 
-GHCR から公式イメージを取得するため、Docker が必要です。詳しくは[セルフホストガイド](SELF_HOSTING.md)を
+GHCR から公式イメージを取得するため、Docker が必要です。詳しくは[セルフホストガイド](../../../SELF_HOSTING.md)を
 ご覧ください。指定した GHCR タグがまだ公開されていない場合は、
 リポジトリのチェックアウトから `make selfhost-build` でビルドしてください。
 
 セルフホストのサーバーは、1 日 1 回、デプロイ単位の匿名スナップショットを送信します。含まれるのはリリースバージョンと
 おおまかな範囲に丸めた件数のみで、名前、コンテンツ、ID は含まれません。無効にするには、API サーバーで `DO_NOT_TRACK=1` を
-設定してください。詳しくは[収集される内容](SELF_HOSTING.md#anonymous-deployment-telemetry)をご覧ください。
+設定してください。詳しくは[収集される内容](../../../SELF_HOSTING.md#anonymous-deployment-telemetry)をご覧ください。
 
 </details>
 
@@ -211,8 +211,8 @@ Multica はモデルを同梱していません。インストールと認証を
 | エージェントに仕事を渡したい | [エージェントに仕事を任せる](https://multica.ai/docs/ja/triggering-agents) · [タスクの割り当て](https://multica.ai/docs/ja/assigning-issues) · [メンション](https://multica.ai/docs/ja/mentioning-agents) |
 | 自分のマシンを接続したい | [デーモンとランタイム](https://multica.ai/docs/ja/daemon-runtimes) · [AI コーディングツールのインストール](https://multica.ai/docs/ja/install-agent-runtime) |
 | Git やチャットのツールを接続したい | [GitHub](https://multica.ai/docs/ja/github-integration) · [セルフホストの Git](https://multica.ai/docs/ja/vcs-integration) · [チャネル](https://multica.ai/docs/ja/channels) |
-| 自分のインフラストラクチャで動かしたい | [セルフホスト](SELF_HOSTING.md) · [セキュリティモデル](https://multica.ai/docs/ja/security-model) · [環境変数](https://multica.ai/docs/ja/environment-variables) |
-| スクリプトから操作したい | [CLI リファレンス](https://multica.ai/docs/ja/cli) · [CLI とデーモンのガイド](CLI_AND_DAEMON.md) · [認証トークン](https://multica.ai/docs/ja/auth-tokens) |
+| 自分のインフラストラクチャで動かしたい | [セルフホスト](../../../SELF_HOSTING.md) · [セキュリティモデル](https://multica.ai/docs/ja/security-model) · [環境変数](https://multica.ai/docs/ja/environment-variables) |
+| スクリプトから操作したい | [CLI リファレンス](https://multica.ai/docs/ja/cli) · [CLI とデーモンのガイド](../../../CLI_AND_DAEMON.md) · [認証トークン](https://multica.ai/docs/ja/auth-tokens) |
 | Codex、Claude Code、Cursor から Multica を操作したい | [Multica CLI skill](https://github.com/multica-ai/multica-cli) |
 | エージェントが止まっている理由を突き止めたい | [実行](https://multica.ai/docs/ja/tasks) · [トラブルシューティング](https://multica.ai/docs/ja/troubleshooting) |
 
@@ -259,7 +259,7 @@ Multica はモデルを同梱していません。インストールと認証を
 
 ## 開発
 
-コントリビューターの方は、まず[コントリビュートガイド](CONTRIBUTING.md)をお読みください。
+コントリビューターの方は、まず[コントリビュートガイド](../../../CONTRIBUTING.md)をお読みください。
 
 **前提条件：** [Node.js](https://nodejs.org/) 22、[pnpm](https://pnpm.io/) 10.28.2、[Go](https://go.dev/) 1.26.9、[Docker](https://www.docker.com/)
 
@@ -270,9 +270,9 @@ make dev
 `make dev` は、環境（メインのチェックアウトかワークツリーか）を自動で検出し、env ファイルを作成し、
 依存関係をインストールし、データベースをセットアップし、マイグレーションを実行して、すべてのサービスを起動します。
 
-ワークフロー全体、ワークツリーへの対応、テスト、トラブルシューティングについては、[CONTRIBUTING.md](CONTRIBUTING.md) を
-ご覧ください。iOS クライアントは [`apps/mobile/`](apps/mobile/) にあり、その
-[README](apps/mobile/README.md) に、自分のデバイスへのビルド方法が記載されています。
+ワークフロー全体、ワークツリーへの対応、テスト、トラブルシューティングについては、[CONTRIBUTING.md](../../../CONTRIBUTING.md) を
+ご覧ください。iOS クライアントは [`apps/mobile/`](../../../apps/mobile/) にあり、その
+[README](../../../apps/mobile/README.md) に、自分のデバイスへのビルド方法が記載されています。
 
 平日はほぼ毎日リリースしているため、`main` は速いペースで更新されます。こまめにプルしてください。
 
@@ -294,6 +294,6 @@ Multics へのオマージュです。
 
 ## ライセンス
 
-[Multica License](LICENSE) — Apache License 2.0 の全文に、ホスティングサービス、商用への組み込み、ブランディングに関する
-追加の条件を加えたものです。セルフホストも、改変も、それをもとにした開発も自由です。正確な条件は [LICENSE](LICENSE) に、
-帰属表示は [NOTICE](NOTICE) にあります。
+[Multica License](../../../LICENSE) — Apache License 2.0 の全文に、ホスティングサービス、商用への組み込み、ブランディングに関する
+追加の条件を加えたものです。セルフホストも、改変も、それをもとにした開発も自由です。正確な条件は [LICENSE](../../../LICENSE) に、
+帰属表示は [NOTICE](../../../NOTICE) にあります。

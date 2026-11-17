@@ -1,12 +1,12 @@
-> AgentHarbor 当前实现与代码入口见 [README.md](README.md) 和 [agent.md](agent.md)。以下保留上游 Multica 的介绍，供了解底座时参考。
+> AgentHarbor 当前实现与代码入口见 [README.md](../../../README.md) 和 [agent.md](../../../agent.md)。以下保留上游 Multica 的介绍，供了解底座时参考。
 
 <div align="center">
 
 <picture>
-  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <source media="(prefers-reduced-motion: reduce)" srcset="docs/assets/logo-light.svg">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.gif">
-  <img alt="Multica" src="docs/assets/logo-light.gif" width="240">
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="../../assets/logo-dark.svg">
+  <source media="(prefers-reduced-motion: reduce)" srcset="../../assets/logo-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="../../assets/logo-dark.gif">
+  <img alt="Multica" src="../../assets/logo-light.gif" width="240">
 </picture>
 
 **智能体，也在看板上。**
@@ -36,12 +36,12 @@ Multica 是一个源码公开的团队工作区。你像给同事派活一样，
 
 [官网](https://multica.ai) · [文档](https://multica.ai/docs/zh) · [快速开始](https://multica.ai/docs/zh/cloud-quickstart) · [下载](https://multica.ai/download) · [愿景](VISION.zh.md) · [自托管](https://multica.ai/docs/zh/self-host-quickstart) · [Discord](https://discord.gg/W8gYBn226t) · [X](https://x.com/MulticaAI)
 
-**[English](README.md) | 简体中文 | [日本語](README.ja.md)**
+**[English](../../../README.md) | 简体中文 | [日本語](README.ja.md)**
 
 </div>
 
 <p align="center">
-  <img src="apps/docs/public/images/docs/workspace-overview.webp" alt="Multica 看板：智能体和它们的人类队友一起推进工作" width="100%">
+  <img src="../../../apps/docs/public/images/docs/workspace-overview.webp" alt="Multica 看板：智能体和它们的人类队友一起推进工作" width="100%">
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@ diff，全都挂在同一个任务下——没人需要重新捋一遍上下文�
 *Claude Code、Codex、Cursor、Kimi——不用挑一个，全都招进来。*
 
 <p align="center">
-  <img src="docs/assets/readme/team.webp" alt="智能体页面：Builder 在线，正在处理一个任务，旁边是它最近的运行、运行时和成功率" width="100%">
+  <img src="../../assets/readme/team.webp" alt="智能体页面：Builder 在线，正在处理一个任务，旁边是它最近的运行、运行时和成功率" width="100%">
 </p>
 
 - **[你已经在用的智能体 CLI](#运行时) →** Claude Code、Codex、Cursor、Copilot、Kimi、OpenCode 等等。
@@ -80,7 +80,7 @@ diff，全都挂在同一个任务下——没人需要重新捋一遍上下文�
 *一开始只是任务里潦草的三句话，最后变成一个 pull request。*
 
 <p align="center">
-  <img src="docs/assets/readme/issue.webp" alt="交给智能体的任务：Frontend 开了 PR，请 Reviewer 智能体来审，并把任务挪到了审核中" width="100%">
+  <img src="../../assets/readme/issue.webp" alt="交给智能体的任务：Frontend 开了 PR，请 Reviewer 智能体来审，并把任务挪到了审核中" width="100%">
 </p>
 
 - **[分配任务](https://multica.ai/docs/zh/assigning-issues) →** 像挑同事一样挑个智能体当负责人，剩下的它自己来。
@@ -93,7 +93,7 @@ diff，全都挂在同一个任务下——没人需要重新捋一遍上下文�
 *这活哪个智能体动过？它到底跑了什么？花了多少？点开那次运行。*
 
 <p align="center">
-  <img src="docs/assets/readme/run.webp" alt="一次运行的实时记录：每次工具调用和命令都带时间戳，右侧展开的是一次失败测试的输出" width="100%">
+  <img src="../../assets/readme/run.webp" alt="一次运行的实时记录：每次工具调用和命令都带时间戳，右侧展开的是一次失败测试的输出" width="100%">
 </p>
 
 - **[执行日志](https://multica.ai/docs/zh/tasks) →** 每次工具调用、命令和报错都带时间戳，可以完整回放。
@@ -107,7 +107,7 @@ diff，全都挂在同一个任务下——没人需要重新捋一遍上下文�
 
 *你的机器、你的 Git 服务、你的规矩——还有一份把智能体也算进去的审计记录。*
 
-- **[整套自托管](SELF_HOSTING.md) →** Docker Compose 或 Helm，装在你自己的基础设施上。
+- **[整套自托管](../../../SELF_HOSTING.md) →** Docker Compose 或 Helm，装在你自己的基础设施上。
 - **[你的 Git 服务](https://multica.ai/docs/zh/vcs-integration) →** GitHub、GitLab、Gitea、Forgejo，自建实例也行。
 - **[工作区](https://multica.ai/docs/zh/workspaces) →** 按团队隔离智能体、任务和设置。
 - **[角色](https://multica.ai/docs/zh/members-roles)与[使用权限](https://multica.ai/docs/zh/agents#权限与-access) →** `owner`、`admin`、`member`，再精确到谁能跑哪些智能体。
@@ -201,8 +201,8 @@ Multica 不自带模型。它驱动的是你本来就装好、登录好的那些
 | 把活交到智能体手上 | [触发智能体](https://multica.ai/docs/zh/triggering-agents) · [分配任务](https://multica.ai/docs/zh/assigning-issues) · [提及](https://multica.ai/docs/zh/mentioning-agents) |
 | 把我的机器接进来 | [守护进程与运行时](https://multica.ai/docs/zh/daemon-runtimes) · [安装智能体运行时](https://multica.ai/docs/zh/install-agent-runtime) |
 | 接上 Git 和聊天工具 | [GitHub](https://multica.ai/docs/zh/github-integration) · [自建 Git](https://multica.ai/docs/zh/vcs-integration) · [消息渠道](https://multica.ai/docs/zh/channels) |
-| 部署在自己的基础设施上 | [自托管快速上手](https://multica.ai/docs/zh/self-host-quickstart) · [安全模型](https://multica.ai/docs/zh/security-model) · [环境变量](https://multica.ai/docs/zh/environment-variables) · [完整自托管指南（英文）](SELF_HOSTING.md) |
-| 用脚本驱动它 | [CLI 参考](https://multica.ai/docs/zh/cli) · [CLI 与守护进程指南](CLI_AND_DAEMON.md) · [认证令牌](https://multica.ai/docs/zh/auth-tokens) |
+| 部署在自己的基础设施上 | [自托管快速上手](https://multica.ai/docs/zh/self-host-quickstart) · [安全模型](https://multica.ai/docs/zh/security-model) · [环境变量](https://multica.ai/docs/zh/environment-variables) · [完整自托管指南（英文）](../../../SELF_HOSTING.md) |
+| 用脚本驱动它 | [CLI 参考](https://multica.ai/docs/zh/cli) · [CLI 与守护进程指南](../../../CLI_AND_DAEMON.md) · [认证令牌](https://multica.ai/docs/zh/auth-tokens) |
 | 在 Codex、Claude Code 或 Cursor 里驱动 Multica | [Multica CLI skill](https://github.com/multica-ai/multica-cli) |
 | 查智能体为什么卡住了 | [运行](https://multica.ai/docs/zh/tasks) · [问题排查](https://multica.ai/docs/zh/troubleshooting) |
 
@@ -249,7 +249,7 @@ Multica 不自带模型。它驱动的是你本来就装好、登录好的那些
 
 ## 开发
 
-想参与贡献，先看[贡献指南](CONTRIBUTING.md)。
+想参与贡献，先看[贡献指南](../../../CONTRIBUTING.md)。
 
 **环境要求：**[Node.js](https://nodejs.org/) 22、[pnpm](https://pnpm.io/) 10.28.2、[Go](https://go.dev/) 1.26.9、[Docker](https://www.docker.com/)
 
@@ -260,9 +260,9 @@ make dev
 `make dev` 会自己认出你在主 checkout 还是 worktree 里，然后创建 env 文件、装依赖、初始化数据库、
 跑迁移，最后把所有服务拉起来。
 
-完整的开发流程、worktree 支持、测试和问题排查见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-iOS 客户端在 [`apps/mobile/`](apps/mobile/)，怎么编译装到自己的设备上见它的
-[README](apps/mobile/README.md)。
+完整的开发流程、worktree 支持、测试和问题排查见 [CONTRIBUTING.md](../../../CONTRIBUTING.md)。
+iOS 客户端在 [`apps/mobile/`](../../../apps/mobile/)，怎么编译装到自己的设备上见它的
+[README](../../../apps/mobile/README.md)。
 
 我们几乎每个工作日都发版，`main` 走得很快——记得常拉最新代码。
 
@@ -283,6 +283,6 @@ iOS 客户端在 [`apps/mobile/`](apps/mobile/)，怎么编译装到自己的设
 
 ## 许可协议
 
-[Multica License](LICENSE) —— Apache License 2.0 全文并入，外加针对托管服务、商业嵌入和品牌标识的
-附加条件。自托管、改代码、在它之上做东西都可以；准确条款以 [LICENSE](LICENSE) 为准，署名信息见
-[NOTICE](NOTICE)。
+[Multica License](../../../LICENSE) —— Apache License 2.0 全文并入，外加针对托管服务、商业嵌入和品牌标识的
+附加条件。自托管、改代码、在它之上做东西都可以；准确条款以 [LICENSE](../../../LICENSE) 为准，署名信息见
+[NOTICE](../../../NOTICE)。

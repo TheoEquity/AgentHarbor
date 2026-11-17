@@ -2,15 +2,15 @@
 
 日期：2026-11-07
 
-状态：记忆改造前的设计记录，不是当前实现清单。当前代码入口和本机旧 L3 清理状态见 [agent.md](../../agent.md) 第 3 节；其他部署须核对各自数据，不能从本文推断。本方案写作时只更新文档，未改代码或迁移数据。
+状态：记忆改造前的设计记录，不是当前实现清单。当前代码入口和本机旧 L3 清理状态见 [agent.md](../../../agent.md) 第 3 节；其他部署须核对各自数据，不能从本文推断。本方案写作时只更新文档，未改代码或迁移数据。
 
-对应需求：[完整需求](requirements.md)、[下一阶段需求与操作](next-stage-requirements.md)。[v1](technical-design-v1.md)保留首版历史设计；本文记录当时的改造方案，当前行为以代码为准。[首版验收记录](local-acceptance-a.md)不能作为本文新增能力的验收证据。
+对应需求：[完整需求](../requirements.md)、[下一阶段需求与操作](next-stage-requirements.md)。[v1](technical-design-v1.md)保留首版历史设计；本文记录当时的改造方案，当前行为以代码为准。[首版验收记录](local-acceptance-a.md)不能作为本文新增能力的验收证据。
 
 ## 1 现状与改造边界
 
 改造前实际接入是每项目一份 MemoryCore L3 文档：网页整份保存，MCP 读整份或追加一段；没有独立条目的候选、有效、停用状态。后端计算的内容哈希用于表示版本，但网页更新没有要求提交旧版本，进程内互斥锁也不能阻止旧页面覆盖新内容。历史依据：[客户端](https://github.com/TheoEquity/AgentHarbor/blob/19832710d61502249b86030b9f853b2f51380b4e/server/internal/agentharbormemory/client.go)、[记忆接口](https://github.com/TheoEquity/AgentHarbor/blob/19832710d61502249b86030b9f853b2f51380b4e/server/internal/handler/agentharbor_memory.go)。
 
-改造前 MCP 只在调用工具时访问 HTTP。另有连接程序按周期下载记忆缓存，并在 `UserPromptSubmit` 提供缓存；这不是新会话直接取云端的目标行为。任务链路可保留：Hook → 本机持久队列 → 每 30 秒批量 HTTP 上传 → 任务页。当前启动读取见 [连接程序](../../tools/agentharbor-connector/connector.py)。
+改造前 MCP 只在调用工具时访问 HTTP。另有连接程序按周期下载记忆缓存，并在 `UserPromptSubmit` 提供缓存；这不是新会话直接取云端的目标行为。任务链路可保留：Hook → 本机持久队列 → 每 30 秒批量 HTTP 上传 → 任务页。当前启动读取见 [连接程序](../../../tools/agentharbor-connector/connector.py)。
 
 本轮架构改造聚焦记忆的数据管理与取回：保留现有底座、项目、身份校验、任务事件和 MCP 外壳。工作仍从本地智能体开始，网页不派发任务，不上传整个代码目录，不修改 `AGENTS.md`。自动导入全部历史会话、新增其他智能体适配、自动生成或执行 Skill 不作为此次记忆改造的前置条件。
 

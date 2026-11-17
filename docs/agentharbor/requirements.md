@@ -8,7 +8,7 @@ AgentHarbor 面向个人使用，把几台机器上 Codex、DeepSeek Harness、H
 
 本文整理已经确认的产品范围、使用方式和检查标准。实现建议与待定事项单独列出；文中的目标能力不代表已经开发完成。
 
-下一阶段采用四类记忆，并分别管理内容状态、适用范围和来源版本。当时的操作设想见[下一阶段需求整理](next-stage-requirements.md)，历史实现方案见[下一阶段技术方案](technical-design-v2.md)。原[首版技术方案](technical-design-v1.md)与[最小验收标准](acceptance.md)保留为首版阶段记录；当前代码入口与实现状态见 [agent.md](../../agent.md)。
+下一阶段采用四类记忆，并分别管理内容状态、适用范围和来源版本。当时的操作设想见[下一阶段需求整理](archive/next-stage-requirements.md)，历史实现方案见[下一阶段技术方案](archive/technical-design-v2.md)。原[首版技术方案](archive/technical-design-v1.md)与[最小验收标准](archive/acceptance.md)保留为首版阶段记录；当前代码入口与实现状态见 [agent.md](../../agent.md)。
 
 ## 1 产品目标与范围
 
@@ -252,7 +252,7 @@ MCP 提供主动读写入口，本身不保证启动时自动读取。新会话�
 
 ## 9 产品功能验收标准
 
-下表是产品目标检查标准，不等于首版最小验收已全部通过。本轮更新了记忆目标；历史 M01–M05 保留在[首版验收文档](acceptance.md)，新增记忆行为见 [v2 验收场景](technical-design-v2.md#9-验收场景)。
+下表是产品目标检查标准，不等于首版最小验收已全部通过。本轮更新了记忆目标；历史 M01–M05 保留在[首版验收文档](archive/acceptance.md)，新增记忆行为见 [v2 验收场景](archive/technical-design-v2.md#9-验收场景)。
 
 | 编号 | 检查场景 | 通过条件 |
 | --- | --- | --- |
@@ -315,13 +315,13 @@ MCP 提供主动读写入口，本身不保证启动时自动读取。新会话�
 | 任务菜单 | 原型已验证组合筛选、搜索、详情、筛选保留和模拟同步；数据为样例 |
 | 记忆界面 | 原型曾展示 L0–L3；下一阶段改为四类职责、条目、状态与范围，尚未实现 |
 | 记忆读取记录 | 已列为需求，尚未在 HTML 原型中展示 |
-| 真实能力 | A 机的 Codex Hook 采集、任务上传/导入、MemoryCore L3 写读、本机上下文提供，以及网页任务与 L3 记忆读取已通过单机验收；B 机和自动四层记忆仍未验证或实现，见[本机验收记录](local-acceptance-a.md) |
+| 真实能力 | A 机的 Codex Hook 采集、任务上传/导入、MemoryCore L3 写读、本机上下文提供，以及网页任务与 L3 记忆读取已通过单机验收；B 机和自动四层记忆仍未验证或实现，见[本机验收记录](archive/local-acceptance-a.md) |
 | 本次交付 | 更新需求与 v2 技术方案，无代码变更；全局记忆、条目生命周期和新会话直接云端读取尚未实现，双机 M01–M05 仍需后续验收 |
 
 ## 12 相关材料
 
-- [下一阶段需求与操作流程](next-stage-requirements.md)
-- [下一阶段技术方案与开源参考](technical-design-v2.md)
+- [下一阶段需求与操作流程](archive/next-stage-requirements.md)
+- [下一阶段技术方案与开源参考](archive/technical-design-v2.md)
 - [现有 UI PRD v0.6](https://chatgpt.com/space/page_1c994776f220819189d968ff52b4b503)
 - 当前交互原型与预览图保留在开发机 `work/ui-prd/`，未纳入此代码仓库。
 - [Multica 上游源码](https://github.com/multica-ai/multica)

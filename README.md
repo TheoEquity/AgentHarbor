@@ -22,6 +22,8 @@ AgentHarbor collects task records and reviewed project memory from local agents.
 | `spec/` | Brief frontend and backend conventions |
 | `docs/agentharbor/` | Requirements, terminology, and historical plans and acceptance records |
 
-Start with the [development guide](agent.md) for current code entry points, [repository rules](AGENTS.md) for engineering constraints, and the [requirements](docs/agentharbor/requirements.md) for product scope. The [frontend](spec/frontend.md) and [backend](spec/backend.md) specs cover the main boundaries; the [connector guide](tools/agentharbor-connector/README.md) covers local setup. Earlier [acceptance results](docs/agentharbor/local-acceptance-a.md) describe the previous MemoryCore-based version.
+Start with the [development guide](agent.md) for current code entry points, [repository rules](AGENTS.md) for engineering constraints, and the [requirements](docs/agentharbor/requirements.md) for product scope. The [frontend](spec/frontend.md) and [backend](spec/backend.md) specs cover the main boundaries; the [connector guide](tools/agentharbor-connector/README.md) covers local setup. Earlier [acceptance results](docs/agentharbor/archive/local-acceptance-a.md) describe the previous MemoryCore-based version.
+
+The [AgentHarbor archive](docs/agentharbor/archive/) preserves earlier designs and acceptance records. Upstream Multica introductions and screenshots are in the [Multica archive](docs/archive/multica/).
 
 See [LICENSE](LICENSE) and [NOTICE](NOTICE) for source license and attribution.
