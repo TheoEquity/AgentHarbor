@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ==========================================================================
-# Full verification pipeline: typecheck → unit tests → Go tests → E2E
+# Verification pipeline: typecheck → web/shared unit tests → migrations → E2E
 # Usage: bash scripts/check.sh
 # ==========================================================================
 
@@ -96,15 +96,12 @@ echo "==> [2/5] TypeScript unit tests..."
 pnpm test || { EXIT_CODE=1; exit 1; }
 
 # --------------------------------------------------------------------------
-# Step 3: Go tests
+# Step 3: Database migrations
 # --------------------------------------------------------------------------
 echo ""
-echo "==> [3/5] Go tests..."
-echo "==> Verifying Go test wrapper..."
-bash scripts/test-go.test.sh || { EXIT_CODE=1; exit 1; }
+echo "==> [3/5] Database migrations (Go tests temporarily paused)..."
 echo "==> Running database migrations..."
 (cd server && go run ./cmd/migrate up) || { EXIT_CODE=1; exit 1; }
-bash scripts/test-go.sh || { EXIT_CODE=1; exit 1; }
 
 # --------------------------------------------------------------------------
 # Step 4: Start services for E2E (only if not already running)

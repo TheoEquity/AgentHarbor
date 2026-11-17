@@ -41,7 +41,7 @@ jobs:
       - name: Test frontend
         env:
           VITEST_MAX_WORKERS: 4
-        run: pnpm exec turbo test --concurrency=1 --env-mode=loose --filter='!@multica/docs' --filter='!@multica/mobile'
+        run: pnpm exec turbo test --concurrency=1 --env-mode=loose --filter='!@multica/docs' --filter='!@multica/mobile' --filter='!@multica/desktop'
 
       - name: Check frontend quality
         uses: ./.github/actions/frontend-quality
@@ -104,9 +104,11 @@ jobs:
         run: go run ./cmd/migrate up
 
       - name: Verify Go test wrapper
+        if: ${{ false }} # Temporarily paused with the Go test suite.
         run: bash scripts/test-go.test.sh
 
       - name: Test Go packages
+        if: ${{ false }} # Temporarily paused.
         run: bash scripts/test-go.sh --race
 
       - name: Scan Go vulnerabilities

@@ -479,13 +479,13 @@ make check-worktree
 This runs:
 
 1. TypeScript typecheck
-2. TypeScript unit tests
-3. Go tests
+2. TypeScript unit tests (desktop and mobile excluded)
+3. Database migrations
 4. Playwright E2E tests
 
 Notes:
 
-- Go tests create their own fixture data
+- Desktop and Go test suites are temporarily paused in default checks, CI, and release verification. `make test` reports the Go test skip.
 - E2E tests create their own workspace and issue fixtures
 - the check flow starts backend/frontend only if they are not already running
 

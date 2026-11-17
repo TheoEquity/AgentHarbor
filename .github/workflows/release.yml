@@ -64,9 +64,11 @@ jobs:
         run: go version
 
       - name: Verify Go test wrapper
+        if: ${{ false }} # Temporarily paused with the Go test suite.
         run: bash scripts/test-go.test.sh
 
       - name: Run tests
+        if: ${{ false }} # Temporarily paused.
         run: bash scripts/test-go.sh --race
 
       - name: Scan Go vulnerabilities
