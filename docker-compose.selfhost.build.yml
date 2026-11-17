@@ -14,6 +14,11 @@ services:
 
   frontend:
     image: multica-web:dev
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      AGENTHARBOR_LOCAL_PREVIEW_EMAIL: ${AGENTHARBOR_LOCAL_PREVIEW_EMAIL:-}
+      MULTICA_DEV_VERIFICATION_CODE: ${MULTICA_DEV_VERIFICATION_CODE:-}
     build:
       context: .
       dockerfile: Dockerfile.web
