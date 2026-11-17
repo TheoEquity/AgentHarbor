@@ -6,6 +6,7 @@ import {
 } from "./lib/locale-routing";
 import { runtimeRewriteDestination } from "./config/runtime-urls";
 import { isOfficialMarketingHost } from "./lib/public-host";
+import { agentHarborHome } from "./lib/agentharbor-home";
 
 // Old workspace-scoped route segments that existed before the URL refactor
 // (pre-#1131). Any URL with these as the FIRST segment is a legacy URL that
@@ -90,11 +91,17 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // --- Root path: redirect logged-in users to their last workspace ---
-  // The official cloud host also serves the public marketing site. Visiting
-  // https://multica.ai/ must remain a public-site navigation even when a local
-  // desktop/runtime session has fresh auth cookies; explicit app routes such
-  // as /acme/issues and legacy /issues still route to the workspace app.
+  if (
+    pathname === "/" &&
+    req.method === "GET" &&
+    process.env.AGENTHARBOR_HOME === "agent-tasks" &&
+    !isOfficialMarketingHost(req.nextUrl.hostname)
+  ) {
+    return agentHarborHome(req);
+  }
+
+  // Keep the official root on the public site. Other app hosts open the last
+  // workspace when the browser already has a session hint.
   if (
     pathname === "/" &&
     hasSession &&
