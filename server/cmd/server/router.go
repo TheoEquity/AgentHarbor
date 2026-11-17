@@ -454,6 +454,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 		GitExtraCACerts:                gitca.Load(slog.Default()),
 	}
 	h := handler.New(queries, pool, hub, bus, emailSvc, store, cfSigner, analyticsClient, signupConfig, daemonHub)
+	h.ConfigureAgentHarborBark()
 	invitationRateLimits := handler.DefaultInvitationRateLimits()
 	invitationRateLimits.Actor.Limit = envNonNegativeInt("RATE_LIMIT_INVITATION_ACTOR_10M", invitationRateLimits.Actor.Limit)
 	invitationRateLimits.Workspace.Limit = envNonNegativeInt("RATE_LIMIT_INVITATION_WORKSPACE_24H", invitationRateLimits.Workspace.Limit)
@@ -2082,6 +2083,12 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 
 			r.Post("/api/agentharbor/sync", h.SyncAgentHarborEvents)
 			r.Get("/api/agentharbor/tasks", h.ListAgentHarborTasks)
+			r.Post("/api/agentharbor/monitor/sync", h.SyncAgentHarborMonitor)
+			r.Get("/api/agentharbor/monitor", h.ListAgentHarborMonitor)
+			r.Post("/api/agentharbor/monitor/handle", h.HandleAgentHarborMonitorTurn)
+			r.Get("/api/agentharbor/monitor/bark", h.GetAgentHarborBark)
+			r.Put("/api/agentharbor/monitor/bark", h.PutAgentHarborBark)
+			r.Post("/api/agentharbor/monitor/bark/test", h.TestAgentHarborBark)
 
 			// Assignee frequency
 			r.Get("/api/assignee-frequency", h.GetAssigneeFrequency)

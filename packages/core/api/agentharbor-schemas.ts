@@ -87,6 +87,80 @@ export type AgentHarborEvent = z.infer<typeof AgentHarborEventSchema>;
 export type AgentHarborTask = z.infer<typeof AgentHarborTaskSchema>;
 export type AgentHarborTasksResponse = z.infer<typeof AgentHarborTasksResponseSchema>;
 
+const AgentHarborMonitorTaskSchema = z.object({
+  project_id: z.string().min(1),
+  project_name: z.string().catch(""),
+  machine_id: z.string().min(1),
+  machine_name: z.string().catch(""),
+  session_id: z.string().min(1),
+  turn_id: z.string().min(1),
+  title: z.string().catch(""),
+  started_at: z.iso.datetime({ offset: true }).nullable().catch(null),
+  ended_at: z.iso.datetime({ offset: true }).nullable().catch(null),
+  status: z.enum(["running", "completed", "aborted", "unknown"]).catch("unknown"),
+  handled: z.boolean().nullable().catch(null),
+  historical: z.boolean().catch(false),
+}).transform((task) => ({
+  projectId: task.project_id,
+  projectName: task.project_name,
+  machineId: task.machine_id,
+  machineName: task.machine_name,
+  sessionId: task.session_id,
+  turnId: task.turn_id,
+  title: task.title,
+  startedAt: task.started_at,
+  endedAt: task.ended_at,
+  status: task.status,
+  handled: task.handled,
+  historical: task.historical,
+}));
+
+const AgentHarborMonitorSourceSchema = z.object({
+  project_id: z.string().min(1),
+  machine_id: z.string().min(1),
+  machine_name: z.string().catch(""),
+  last_synced_at: z.iso.datetime({ offset: true }),
+  stale: z.boolean().catch(true),
+}).transform((source) => ({
+  projectId: source.project_id,
+  machineId: source.machine_id,
+  machineName: source.machine_name,
+  lastSyncedAt: source.last_synced_at,
+  stale: source.stale,
+}));
+
+export const AgentHarborMonitorResponseSchema = z.object({
+  tasks: z.array(AgentHarborMonitorTaskSchema),
+  sources: z.array(AgentHarborMonitorSourceSchema),
+  has_more: z.boolean().catch(false),
+}).transform(({ tasks, sources, has_more }) => ({ tasks, sources, hasMore: has_more }));
+
+export const AgentHarborMonitorHandleSchema = z.object({ handled: z.literal(true) });
+
+export const AgentHarborBarkSettingsSchema = z.object({
+  configured: z.boolean(),
+  enabled: z.boolean(),
+});
+
+export const AgentHarborBarkTestSchema = z.object({ sent: z.literal(true) });
+
+export type AgentHarborMonitorTask = z.infer<typeof AgentHarborMonitorTaskSchema>;
+export type AgentHarborMonitorResponse = z.infer<typeof AgentHarborMonitorResponseSchema>;
+export type AgentHarborMonitorTaskId = Pick<AgentHarborMonitorTask, "projectId" | "machineId" | "sessionId" | "turnId">;
+export type AgentHarborBarkSettings = z.infer<typeof AgentHarborBarkSettingsSchema>;
+
+export interface AgentHarborMonitorFilters {
+  view: "active" | "history";
+  projectId?: string;
+  machineId?: string;
+  page?: number;
+}
+
+export type AgentHarborBarkUpdate = { enabled: boolean } & (
+  | { serverUrl: string; deviceKey: string }
+  | { serverUrl?: never; deviceKey?: never }
+);
+
 export const AgentHarborMemorySnapshotSchema = z.object({
   project_id: z.string(),
   version: z.string().default(""),

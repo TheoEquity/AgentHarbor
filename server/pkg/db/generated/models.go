@@ -189,6 +189,27 @@ type AgentToLabel struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
+type AgentharborBarkDelivery struct {
+	WorkspaceID pgtype.UUID        `json:"workspace_id"`
+	ProjectID   pgtype.UUID        `json:"project_id"`
+	MachineID   pgtype.UUID        `json:"machine_id"`
+	SessionID   string             `json:"session_id"`
+	TurnID      string             `json:"turn_id"`
+	UserID      pgtype.UUID        `json:"user_id"`
+	Title       string             `json:"title"`
+	Body        string             `json:"body"`
+	AvailableAt pgtype.Timestamptz `json:"available_at"`
+	Attempts    int32              `json:"attempts"`
+	SentAt      pgtype.Timestamptz `json:"sent_at"`
+}
+
+type AgentharborBarkSetting struct {
+	WorkspaceID  pgtype.UUID        `json:"workspace_id"`
+	UserID       pgtype.UUID        `json:"user_id"`
+	Credentials  []byte             `json:"credentials"`
+	EnabledSince pgtype.Timestamptz `json:"enabled_since"`
+}
+
 type AgentharborEvent struct {
 	EventID     pgtype.UUID        `json:"event_id"`
 	WorkspaceID pgtype.UUID        `json:"workspace_id"`
@@ -259,6 +280,37 @@ type AgentharborMemorySetting struct {
 	CloudEnabled  bool        `json:"cloud_enabled"`
 	UseMemory     bool        `json:"use_memory"`
 	UseGlobal     bool        `json:"use_global"`
+}
+
+type AgentharborMonitorHandled struct {
+	WorkspaceID pgtype.UUID `json:"workspace_id"`
+	ProjectID   pgtype.UUID `json:"project_id"`
+	MachineID   pgtype.UUID `json:"machine_id"`
+	SessionID   string      `json:"session_id"`
+	TurnID      string      `json:"turn_id"`
+	UserID      pgtype.UUID `json:"user_id"`
+}
+
+type AgentharborMonitorSource struct {
+	WorkspaceID  pgtype.UUID        `json:"workspace_id"`
+	ProjectID    pgtype.UUID        `json:"project_id"`
+	MachineID    pgtype.UUID        `json:"machine_id"`
+	MachineName  string             `json:"machine_name"`
+	LastSyncedAt pgtype.Timestamptz `json:"last_synced_at"`
+	ScanStatus   string             `json:"scan_status"`
+}
+
+type AgentharborMonitorTurn struct {
+	WorkspaceID pgtype.UUID        `json:"workspace_id"`
+	ProjectID   pgtype.UUID        `json:"project_id"`
+	MachineID   pgtype.UUID        `json:"machine_id"`
+	SessionID   string             `json:"session_id"`
+	TurnID      string             `json:"turn_id"`
+	Title       string             `json:"title"`
+	StartedAt   pgtype.Timestamptz `json:"started_at"`
+	EndedAt     pgtype.Timestamptz `json:"ended_at"`
+	Status      string             `json:"status"`
+	Historical  bool               `json:"historical"`
 }
 
 type Attachment struct {

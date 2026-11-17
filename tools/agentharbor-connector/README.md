@@ -62,6 +62,20 @@ py -3 tools/agentharbor-connector/connector.py run
 
 On macOS or Linux, use `python3` in place of `py -3`. `run` performs an immediate sync, then repeats every 30 seconds until interrupted. Each sync sends a batch within the server’s request size limit. Events stay queued until the server confirms their IDs. `tasks` prints the last fetched task list. Upgraded connectors fetch startup memory directly and ignore any `memory-<project-id>.json` files left by earlier versions.
 
+## Codex task monitor
+
+With the task sync environment variables set, run the monitor on the machine running Codex. The directory must have a matching `.codex/agentharbor-project.json` binding. Use `monitor-once` for one scan and sync, or `monitor` for continuous updates.
+
+```powershell
+py -3 tools/agentharbor-connector/connector.py monitor --project-root "<project-directory>"
+```
+
+Repeat `--project-root` for older directories bound to the same AgentHarbor project. Use the same `AGENTHARBOR_STATE_DIR` for collectors on one machine so they share its machine ID. Run a collector with the corresponding `AGENTHARBOR_PROJECT_ID` for each project. The monitor opens Codex SQLite and rollout files read-only from `CODEX_HOME` (default `~/.codex`). It reads complete lifecycle records, keeps progress and unsent turn snapshots together, and retries until the whole batch is acknowledged. The monitor and Hook sync commands can run alongside each other.
+
+Completed turns from before a directory was connected appear in history. Existing exact turn confirmations are read from the Windows monitor settings or the macOS monitor preferences when present. A missing confirmation stays unknown for imported history. The monitor uses explicit Codex thread names with a generic fallback and sends no prompt, rollout, or directory contents. The AgentHarbor page shows the last sync time and flags records that may be out of date after a scan or connection failure.
+
+To monitor the whole machine, use `monitor --project-map "<local-mapping.json>"`. Keep this JSON file on the source machine. Set `projects` to an array of objects with `project_id` and `roots` (absolute local directories) and set `unassigned_project_id` to the existing AgentHarbor project that should receive tasks without a matching directory. The most specific directory wins. All project IDs must belong to the configured workspace. Optional `rollout_archives` lists trusted local Codex backups in priority order. The collector uses them for indexed logs missing from the active Codex directories and imports their completed or aborted turns.
+
 ## Local checks
 
 ```powershell

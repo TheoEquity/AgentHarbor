@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
 from datetime import datetime, timezone
+from functools import partial
 from hashlib import sha256
 from http.client import HTTPException
 import json
@@ -14,7 +14,6 @@ from pathlib import Path
 import signal
 import socket
 import sys
-import tempfile
 import threading
 import time
 from urllib.error import HTTPError, URLError
@@ -22,6 +21,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 from uuid import UUID, uuid4
 
+from connector_queue import ConnectorError, load_queue, queue_lock, read_json, write_json
 from memory_client import MemoryClient
 
 
@@ -35,10 +35,6 @@ SYNC_BODY_LIMIT = 256 * 1024
 STARTUP_MEMORY_BUDGET_SECONDS = 0.8
 HOOK_WORK_BUDGET_SECONDS = 2.2
 MAX_STARTUP_CONTEXT_BYTES = 2600
-
-
-class ConnectorError(Exception):
-    pass
 
 
 def project_id() -> str:
@@ -60,68 +56,6 @@ def state_dir() -> Path:
         if base:
             return Path(base) / "AgentHarbor" / "connector"
     return Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")) / "agentharbor-connector"
-
-
-@contextmanager
-def queue_lock(directory: Path, timeout: float = 2):
-    directory.mkdir(parents=True, exist_ok=True)
-    lock = directory / "queue.lock"
-    deadline = time.monotonic() + timeout
-    while True:
-        try:
-            lock.mkdir()
-            break
-        except FileExistsError:
-            try:
-                if time.time() - lock.stat().st_mtime > 30:
-                    lock.rmdir()
-                    continue
-            except (FileNotFoundError, OSError):
-                pass
-            if time.monotonic() >= deadline:
-                raise ConnectorError("local queue is busy")
-            time.sleep(0.025)
-    try:
-        yield
-    finally:
-        lock.rmdir()
-
-
-def write_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as file:
-            temporary = Path(file.name)
-            json.dump(value, file, ensure_ascii=False, separators=(",", ":"))
-            file.write("\n")
-            file.flush()
-            os.fsync(file.fileno())
-        os.replace(temporary, path)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
-
-
-def read_json(path: Path) -> object:
-    with path.open("r", encoding="utf-8") as file:
-        return json.load(file)
-
-
-def load_queue(directory: Path) -> dict:
-    path = directory / "queue.json"
-    if not path.exists():
-        return {"machine_id": str(uuid4()), "next_seq": 1, "events": []}
-    value = read_json(path)
-    if not isinstance(value, dict) or not isinstance(value.get("events"), list):
-        raise ConnectorError("local queue is invalid")
-    if not isinstance(value.get("next_seq"), int) or value["next_seq"] < 1:
-        raise ConnectorError("local queue sequence is invalid")
-    try:
-        UUID(value["machine_id"])
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ConnectorError("local machine ID is invalid") from exc
-    return value
 
 
 def event_evidence(hook_name: str, payload: dict) -> str:
@@ -291,8 +225,8 @@ def sync_batch(machine: dict, events: list[dict]) -> list[dict]:
 
 
 class Client:
-    def __init__(self) -> None:
-        self.project = project_id()
+    def __init__(self, project: str | None = None) -> None:
+        self.project = project or project_id()
         self.base_url = os.environ.get("AGENTHARBOR_URL", "").rstrip("/")
         self.workspace = os.environ.get("AGENTHARBOR_WORKSPACE_ID", "")
         self.token = os.environ.get("AGENTHARBOR_PAT", "")
@@ -372,32 +306,55 @@ def show_tasks(directory: Path, project: str) -> None:
     print(json.dumps(tasks, ensure_ascii=False, separators=(",", ":")))
 
 
-def run_loop(client: Client, directory: Path) -> None:
+def run_loop(sync, period: int = SYNC_PERIOD_SECONDS) -> None:
     stop = threading.Event()
     signal.signal(signal.SIGINT, lambda *_: stop.set())
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     while not stop.is_set():
         try:
-            print(json.dumps(sync_once(client, directory), separators=(",", ":")), flush=True)
+            print(json.dumps(sync(), separators=(",", ":")), flush=True)
         except (ConnectorError, OSError, ValueError) as exc:
             print(f"agentharbor-connector: {exc}", file=sys.stderr, flush=True)
-        stop.wait(SYNC_PERIOD_SECONDS)
+        stop.wait(period)
+
+
+def run_monitor(args, directory: Path) -> int:
+    from task_monitor import monitor_once, monitor_projects
+
+    if args.project_map:
+        sync = partial(monitor_projects, Client, directory, args.project_map)
+    else:
+        sync = partial(monitor_once, Client(), directory, tuple(args.project_root))
+    if args.command == "monitor":
+        run_loop(sync, period=5)
+        return 0
+    result = sync()
+    print(json.dumps(result, separators=(",", ":")))
+    return int(any("error" in project for project in result.get("projects", {}).values()))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("hook", "sync-once", "run", "tasks", "connect"))
-    parser.add_argument("--project-root", type=Path, help="local code directory to bind to project memory")
+    commands = ("hook", "sync-once", "run", "tasks", "connect", "monitor", "monitor-once")
+    parser.add_argument("command", choices=commands)
+    parser.add_argument("--project-root", type=Path, action="append", help="local directory for the selected project")
+    parser.add_argument("--project-map", type=Path, help="local project mapping and catchall for task monitoring")
     args = parser.parse_args()
-    if args.command == "connect" and args.project_root is None:
-        parser.error("connect requires --project-root")
+    if args.command in {"monitor", "monitor-once"} and bool(args.project_root) == bool(args.project_map):
+        parser.error(f"{args.command} requires --project-root or --project-map")
+    if args.project_map and args.command not in {"monitor", "monitor-once"}:
+        parser.error("--project-map is only for task monitoring")
+    if args.command == "connect" and len(args.project_root or ()) != 1:
+        parser.error("connect takes one --project-root")
     try:
         if args.command == "connect":
             from connect_setup import connect
-            project = connect(args.project_root)
+            project = connect(args.project_root[0])
             print(f"Connected project {project} to Codex memory. Restart Codex to load the tools.")
             return 0
         directory = state_dir()
+        if args.command in {"monitor", "monitor-once"}:
+            return run_monitor(args, directory)
         if args.command == "hook":
             handle_hook()
         elif args.command == "tasks":
@@ -407,7 +364,7 @@ def main() -> int:
             if args.command == "sync-once":
                 print(json.dumps(sync_once(client, directory), separators=(",", ":")))
             else:
-                run_loop(client, directory)
+                run_loop(partial(sync_once, client, directory))
         return 0
     except (ConnectorError, OSError, ValueError) as exc:
         print(f"agentharbor-connector: {exc}", file=sys.stderr)

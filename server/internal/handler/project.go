@@ -694,6 +694,13 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "failed to delete project agentharbor events")
 		return
 	}
+	if err := qtx.DeleteAgentHarborMonitorProject(r.Context(), db.DeleteAgentHarborMonitorProjectParams{
+		WorkspaceID: project.WorkspaceID,
+		ProjectID:   project.ID,
+	}); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to delete project monitor data")
+		return
+	}
 	if err := deleteAgentHarborProjectMemory(r.Context(), qtx, project.WorkspaceID, project.ID); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete project memory")
 		return

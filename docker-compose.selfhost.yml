@@ -183,6 +183,8 @@ services:
       # in the database, so this single deployment-wide key is all the operator
       # needs to set here.
       MULTICA_SLACK_SECRET_KEY: ${MULTICA_SLACK_SECRET_KEY:-}
+      # Base64-encoded 32-byte key for encrypting per-user Bark settings.
+      AGENTHARBOR_BARK_SECRET_KEY: ${AGENTHARBOR_BARK_SECRET_KEY:-}
       # DingTalk bot integration. MULTICA_DINGTALK_SECRET_KEY is the opt-in:
       # unset = integration disabled. It encrypts each installation's AppSecret
       # at rest, so this single deployment-wide key is all the operator needs

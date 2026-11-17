@@ -273,6 +273,11 @@ import type {
   AgentHarborMemorySnapshot,
   AgentHarborMemoryUpdateInput,
   AgentHarborTasksResponse,
+  AgentHarborBarkSettings,
+  AgentHarborBarkUpdate,
+  AgentHarborMonitorFilters,
+  AgentHarborMonitorResponse,
+  AgentHarborMonitorTaskId,
 } from "./schemas";
 import {
   RuntimeProfileSchema,
@@ -365,6 +370,10 @@ import {
   ProjectSchema,
   ListProjectsResponseSchema,
   AgentHarborTasksResponseSchema,
+  AgentHarborBarkSettingsSchema,
+  AgentHarborBarkTestSchema,
+  AgentHarborMonitorHandleSchema,
+  AgentHarborMonitorResponseSchema,
   AgentHarborMemoryEntriesSchema,
   AgentHarborMemoryAccessTokenSchema,
   AgentHarborMemoryEntrySchema,
@@ -963,11 +972,12 @@ export class ApiClient {
   // path, plain text for the attachment-preview proxy, etc.
   private async fetchRaw(
     path: string,
-    init?: RequestInit & { extraHeaders?: Record<string, string> },
+    init?: RequestInit & { extraHeaders?: Record<string, string>; omitErrorBody?: boolean },
   ): Promise<Response> {
     const rid = createRequestId();
     const start = Date.now();
-    const method = init?.method ?? "GET";
+    const { extraHeaders, omitErrorBody, ...requestInit } = init ?? {};
+    const method = requestInit.method ?? "GET";
 
     // Rebuilt per attempt rather than captured once: authHeaders() reads the
     // CSRF cookie at call time, and the retry below exists precisely because
@@ -975,7 +985,7 @@ export class ApiClient {
     const buildHeaders = (): Record<string, string> => ({
       "X-Request-ID": rid,
       ...this.authHeaders(),
-      ...(init?.extraHeaders ?? {}),
+      ...extraHeaders,
       ...((init?.headers as Record<string, string>) ?? {}),
     });
 
@@ -987,7 +997,7 @@ export class ApiClient {
 
     const send = () =>
       fetch(`${this.baseUrl}${path}`, {
-        ...init,
+        ...requestInit,
         headers: buildHeaders(),
         credentials: "include",
       });
@@ -1018,10 +1028,13 @@ export class ApiClient {
 
     if (!res.ok) {
       if (res.status === 401) this.handleUnauthorized(credentialUsed);
-      const { message, body } = await this.parseErrorBody(res, `API error: ${res.status} ${res.statusText}`);
+      const fallback = `API error: ${res.status} ${res.statusText}`;
+      const { message, body } = omitErrorBody
+        ? { message: `API error: ${res.status}`, body: undefined }
+        : await this.parseErrorBody(res, fallback);
       const logLevel = res.status === 404 ? "warn" : "error";
       this.logger[logLevel](`← ${res.status} ${path}`, { rid, duration: `${Date.now() - start}ms`, error: message });
-      throw new ApiError(message, res.status, res.statusText, body);
+      throw new ApiError(message, res.status, omitErrorBody ? "" : res.statusText, body);
     }
 
     this.logger.info(`← ${res.status} ${path}`, { rid, duration: `${Date.now() - start}ms` });
@@ -4255,6 +4268,74 @@ export class ApiClient {
     return parseWithFallback(raw, AgentHarborTasksResponseSchema, { tasks: [] }, {
       endpoint: "GET /api/agentharbor/tasks",
     });
+  }
+
+
+  async listAgentHarborMonitor(
+    filters: AgentHarborMonitorFilters,
+    workspaceId?: string,
+  ): Promise<AgentHarborMonitorResponse> {
+    const search = new URLSearchParams({ view: filters.view });
+    if (filters.projectId) search.set("project_id", filters.projectId);
+    if (filters.machineId) search.set("machine_id", filters.machineId);
+    search.set("page", String(filters.page ?? 1));
+    return this.fetchAgentHarborMonitor(
+      `?${search}`, AgentHarborMonitorResponseSchema, workspaceId,
+    );
+  }
+
+  async handleAgentHarborMonitorTask(task: AgentHarborMonitorTaskId, workspaceId?: string): Promise<{ handled: true }> {
+    return this.fetchAgentHarborMonitor("/handle", AgentHarborMonitorHandleSchema, workspaceId, {
+      method: "POST",
+      body: JSON.stringify({
+        project_id: task.projectId,
+        machine_id: task.machineId,
+        session_id: task.sessionId,
+        turn_id: task.turnId,
+      }),
+    });
+  }
+
+  async getAgentHarborBark(workspaceId?: string): Promise<AgentHarborBarkSettings> {
+    return this.fetchAgentHarborMonitor("/bark", AgentHarborBarkSettingsSchema, workspaceId, undefined, ["configured", "enabled"]);
+  }
+
+  async putAgentHarborBark(settings: AgentHarborBarkUpdate, workspaceId?: string): Promise<AgentHarborBarkSettings> {
+    return this.fetchAgentHarborMonitor("/bark", AgentHarborBarkSettingsSchema, workspaceId, {
+      method: "PUT",
+      body: JSON.stringify({ enabled: settings.enabled, server_url: settings.serverUrl, device_key: settings.deviceKey }),
+    }, ["configured", "enabled"]);
+  }
+
+  async testAgentHarborBark(workspaceId?: string): Promise<{ sent: true }> {
+    return this.fetchAgentHarborMonitor("/bark/test", AgentHarborBarkTestSchema, workspaceId, { method: "POST" }, ["sent"]);
+  }
+
+  private async fetchAgentHarborMonitor<T>(
+    resource: string,
+    schema: ZodType<T>,
+    workspaceId: string | undefined,
+    options?: RequestInit,
+    publicFlags?: string[],
+  ): Promise<T> {
+    const path = `/api/agentharbor/monitor${resource}`;
+    const endpoint = `${options?.method ?? "GET"} ${path.split("?")[0]}`;
+    const res = await this.fetchRaw(path, {
+      ...options,
+      extraHeaders: { "Content-Type": "application/json", ...workspaceHeader(workspaceId ? { workspaceId } : undefined) },
+      omitErrorBody: !!publicFlags,
+    });
+    const raw: unknown = await res.json().catch(() => undefined);
+    // Schema diagnostics include the received value, so pass only the public Bark flags.
+    const safeResponse = publicFlags
+      ? Object.fromEntries(publicFlags.map((field) => {
+        const value: unknown = raw && typeof raw === "object" ? Reflect.get(raw, field) : undefined;
+        return [field, typeof value === "boolean" ? value : undefined];
+      }))
+      : raw;
+    const parsed = parseWithFallback<T | null>(safeResponse, schema, null, { endpoint });
+    if (parsed === null) throw new Error(`Malformed response from ${endpoint}`);
+    return parsed;
   }
 
   async getAgentHarborMemory(projectId: string): Promise<AgentHarborMemorySnapshot> {

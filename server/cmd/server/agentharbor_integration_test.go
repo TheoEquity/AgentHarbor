@@ -131,4 +131,110 @@ func TestAgentHarborPATRouteSmoke(t *testing.T) {
 			t.Errorf("memory snapshot status = %d, want %d", response.StatusCode, tc.want)
 		}
 	}
+
+	monitorPath := "/api/agentharbor/monitor"
+	syncMonitor := func(scan string, turns ...map[string]any) {
+		t.Helper()
+		if turns == nil {
+			turns = []map[string]any{}
+		}
+		response := call(http.MethodPost, monitorPath+"/sync", pat, map[string]any{
+			"project_id": projectID, "machine": requestBody["machine"], "scan_status": scan, "turns": turns,
+		})
+		if response.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(response.Body)
+			response.Body.Close()
+			t.Fatalf("monitor sync status = %d: %s", response.StatusCode, body)
+		}
+		var ack struct {
+			AcceptedCount int `json:"accepted_count"`
+		}
+		readJSON(t, response, &ack)
+		if ack.AcceptedCount != len(turns) {
+			t.Fatalf("monitor accepted %d turns, want %d", ack.AcceptedCount, len(turns))
+		}
+	}
+	const latest = "2026-01-03T03:04:05Z"
+	old := map[string]any{"session_id": "same-session", "turn_id": "old", "title": "Old turn", "started_at": "2026-01-02T03:04:05Z", "ended_at": latest, "status": "completed", "historical": true}
+	newRunning := map[string]any{"session_id": "same-session", "turn_id": "new", "title": "New turn", "started_at": latest, "status": "running"}
+	syncMonitor("ok", newRunning)
+	syncMonitor("ok", old)
+	syncMonitor("ok", map[string]any{"session_id": "same-session", "turn_id": "older-no-start", "title": "Old interrupted turn", "ended_at": "2026-01-01T00:00:00Z", "status": "aborted", "historical": true})
+	syncMonitor("degraded")
+	type turn struct {
+		TurnID  string `json:"turn_id"`
+		Status  string `json:"status"`
+		Handled *bool  `json:"handled"`
+	}
+	getMonitor := func(view string) ([]turn, bool) {
+		t.Helper()
+		response := call(http.MethodGet, monitorPath+"?project_id="+projectID+"&view="+view, pat, nil)
+		if response.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(response.Body)
+			response.Body.Close()
+			t.Fatalf("monitor list status = %d: %s", response.StatusCode, body)
+		}
+		var listing struct {
+			Tasks   []turn `json:"tasks"`
+			Sources []struct {
+				Stale bool `json:"stale"`
+			} `json:"sources"`
+		}
+		readJSON(t, response, &listing)
+		if len(listing.Sources) != 1 {
+			t.Fatalf("monitor sources = %+v, want one", listing.Sources)
+		}
+		return listing.Tasks, listing.Sources[0].Stale
+	}
+	if active, stale := getMonitor("active"); len(active) != 1 || active[0].TurnID != "new" || active[0].Status != "running" || !stale {
+		t.Fatalf("late old completion and degraded scan changed latest running turn: %+v, stale=%t", active, stale)
+	}
+	key := map[string]any{"project_id": projectID, "machine_id": machineID, "session_id": "same-session", "turn_id": "new"}
+	handle := func(want int) {
+		t.Helper()
+		response := call(http.MethodPost, monitorPath+"/handle", pat, key)
+		response.Body.Close()
+		if response.StatusCode != want {
+			t.Fatalf("handle status = %d, want %d", response.StatusCode, want)
+		}
+	}
+	handle(http.StatusConflict)
+	syncMonitor("ok", map[string]any{"session_id": "same-session", "turn_id": "new", "title": "New turn", "started_at": latest, "ended_at": "2026-01-03T03:05:05Z", "status": "aborted"})
+	syncMonitor("ok", newRunning)
+	if active, stale := getMonitor("active"); len(active) != 1 || active[0].Status != "aborted" || active[0].Handled == nil || *active[0].Handled || stale {
+		t.Fatalf("replayed start changed terminal turn: %+v, stale=%t", active, stale)
+	}
+	handle(http.StatusOK)
+	handle(http.StatusOK)
+	if active, _ := getMonitor("active"); len(active) != 0 {
+		t.Fatalf("handled terminal turn still active: %+v", active)
+	}
+	if history, _ := getMonitor("history"); len(history) != 3 || history[0].TurnID != "new" || history[0].Handled == nil || !*history[0].Handled || history[1].Handled != nil || history[2].TurnID != "older-no-start" {
+		t.Fatalf("monitor history lost turns or handling distinction: %+v", history)
+	}
+	syncMonitor("ok", map[string]any{"session_id": "same-session", "turn_id": "next", "title": "Next turn", "started_at": "2026-01-04T00:00:00Z", "ended_at": "2026-01-04T00:01:00Z", "status": "completed"})
+	if active, _ := getMonitor("active"); len(active) != 1 || active[0].TurnID != "next" || active[0].Handled == nil || *active[0].Handled {
+		t.Fatalf("handling a terminal turn carried over to a later turn: %+v", active)
+	}
+	for _, item := range []struct {
+		method string
+		path   string
+		body   any
+	}{
+		{http.MethodPost, monitorPath + "/sync", map[string]any{"project_id": foreignProjectID, "machine": requestBody["machine"], "scan_status": "ok", "turns": []any{}}},
+		{http.MethodGet, monitorPath + "?project_id=" + foreignProjectID, nil},
+		{http.MethodPost, monitorPath + "/handle", map[string]any{"project_id": foreignProjectID, "machine_id": machineID, "session_id": "same-session", "turn_id": "new"}},
+	} {
+		response := call(item.method, item.path, pat, item.body)
+		response.Body.Close()
+		if response.StatusCode != http.StatusNotFound {
+			t.Errorf("foreign project %s %s status = %d, want 404", item.method, item.path, response.StatusCode)
+		}
+	}
+	deleted := call(http.MethodDelete, "/api/projects/"+projectID, pat, nil)
+	deleted.Body.Close()
+	if deleted.StatusCode != http.StatusNoContent {
+		t.Fatalf("project deletion status = %d, want 204", deleted.StatusCode)
+	}
+
 }

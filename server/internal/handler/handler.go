@@ -216,6 +216,7 @@ type RuntimeRecoveryNotifier interface {
 }
 
 type Handler struct {
+	agentHarborBark        *agentHarborBark
 	Queries                *db.Queries
 	ReadSelector           *dbreader.Selector
 	DB                     dbExecutor

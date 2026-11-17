@@ -32,6 +32,15 @@ type Resolver interface {
 }
 
 func ValidatePublicHTTPSEndpoint(ctx context.Context, raw string, allowedHosts []string, resolver Resolver) (*url.URL, error) {
+	return validatePublicHTTPSEndpoint(ctx, raw, allowedHosts, resolver, true)
+}
+
+// ValidateStrictPublicHTTPSEndpoint applies the public-network check without Plugin development overrides.
+func ValidateStrictPublicHTTPSEndpoint(ctx context.Context, raw string) (*url.URL, error) {
+	return validatePublicHTTPSEndpoint(ctx, raw, nil, nil, false)
+}
+
+func validatePublicHTTPSEndpoint(ctx context.Context, raw string, allowedHosts []string, resolver Resolver, allowDevOrigin bool) (*url.URL, error) {
 	endpoint, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil {
 		return nil, fmt.Errorf("parse endpoint: %w", err)
@@ -39,7 +48,7 @@ func ValidatePublicHTTPSEndpoint(ctx context.Context, raw string, allowedHosts [
 	// An operator-named dev origin skips the public-internet requirement and
 	// nothing else: the net: scope below still applies, so a Plugin still
 	// cannot reach a destination the administrator did not consent to.
-	if isDevOrigin(endpoint) {
+	if allowDevOrigin && isDevOrigin(endpoint) {
 		devHost := strings.ToLower(strings.TrimSuffix(endpoint.Hostname(), "."))
 		if len(allowedHosts) > 0 && !hostAllowed(devHost, allowedHosts) {
 			return nil, errors.New("endpoint host is outside the Plugin endpoint policy")
@@ -114,11 +123,20 @@ func isPublicAddress(address netip.Addr) bool {
 }
 
 func NewSecureHTTPClient(endpoint *url.URL) *http.Client {
+	return newSecureHTTPClient(endpoint, true)
+}
+
+// NewStrictPublicHTTPSClient rechecks the public destination on dial and refuses redirects.
+func NewStrictPublicHTTPSClient(endpoint *url.URL) *http.Client {
+	return newSecureHTTPClient(endpoint, false)
+}
+
+func newSecureHTTPClient(endpoint *url.URL, allowDevOrigin bool) *http.Client {
 	// Decided once, here, rather than inside the dialer: the endpoint is fixed
 	// for this client's lifetime, so a per-dial lookup could only differ if the
 	// environment changed mid-task, and honouring that would be a way to widen
 	// the guard after the connection was approved.
-	devOrigin := isDevOrigin(endpoint)
+	devOrigin := allowDevOrigin && isDevOrigin(endpoint)
 	dialer := &net.Dialer{Timeout: ConnectTimeout, KeepAlive: 30 * time.Second}
 	transport := httptransport.CloneDefault().(*http.Transport)
 	transport.Proxy = nil
