@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { api } from "../api";
-import type { AgentHarborMemoryScope } from "../api/schemas";
+import type { AgentHarborMemoryScope, AgentHarborMonitorFilters } from "../api/schemas";
 
 export const agentHarborTaskKeys = {
   all: (wsId: string) => ["agentharbor-tasks", wsId] as const,
@@ -13,6 +13,30 @@ export function agentHarborTasksOptions(wsId: string, projectId: string) {
     queryKey: agentHarborTaskKeys.project(wsId, projectId),
     queryFn: () => api.listAgentHarborTasks(projectId),
     refetchInterval: 30_000,
+  });
+}
+
+export const agentHarborMonitorKeys = {
+  lists: (wsId: string) => ["agentharbor-monitor", wsId] as const,
+  view: (wsId: string, view: AgentHarborMonitorFilters["view"]) =>
+    [...agentHarborMonitorKeys.lists(wsId), view] as const,
+  list: (wsId: string, { view, ...filters }: AgentHarborMonitorFilters) =>
+    [...agentHarborMonitorKeys.view(wsId, view), filters] as const,
+  bark: (wsId: string) => ["agentharbor-bark", wsId] as const,
+};
+
+export function agentHarborMonitorOptions(wsId: string, filters: AgentHarborMonitorFilters) {
+  return queryOptions({
+    queryKey: agentHarborMonitorKeys.list(wsId, filters),
+    queryFn: () => api.listAgentHarborMonitor(filters, wsId),
+    refetchInterval: 30_000,
+  });
+}
+
+export function agentHarborBarkOptions(wsId: string) {
+  return queryOptions({
+    queryKey: agentHarborMonitorKeys.bark(wsId),
+    queryFn: () => api.getAgentHarborBark(wsId),
   });
 }
 

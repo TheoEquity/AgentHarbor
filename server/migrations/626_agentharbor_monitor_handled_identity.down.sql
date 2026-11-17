@@ -1,0 +1,1 @@
+DROP INDEX CONCURRENTLY IF EXISTS agentharbor_monitor_handled_identity;

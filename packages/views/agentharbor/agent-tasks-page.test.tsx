@@ -9,6 +9,9 @@ import { projectListOptions } from "@multica/core/projects/queries";
 import { renderWithI18n } from "../test/i18n";
 import { AgentTasksPage } from "./agent-tasks-page";
 
+vi.mock("@multica/core/api", () => ({
+  api: { listAgentHarborMonitor: vi.fn().mockResolvedValue({ tasks: [], sources: [], hasMore: false }) },
+}));
 vi.mock("@multica/core/paths", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@multica/core/paths")>();
   return {
@@ -22,7 +25,7 @@ vi.mock("../navigation", () => ({
     <a href={href}>{children}</a>,
 }));
 
-function renderTask(events: AgentHarborTask["events"] = []) {
+async function renderTask(events: AgentHarborTask["events"] = []) {
   const qc = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
   qc.setQueryData(projectListOptions("ws-1").queryKey, {
     projects: [{
@@ -42,11 +45,12 @@ function renderTask(events: AgentHarborTask["events"] = []) {
   });
 
   renderWithI18n(<QueryClientProvider client={qc}><AgentTasksPage /></QueryClientProvider>);
+  await userEvent.setup().click(screen.getByRole("tab", { name: "Hook records" }));
 }
 
 describe("Agent tasks page", () => {
-  it("shows the project, machine, agent, and evidence-based status", () => {
-    renderTask();
+  it("shows the project, machine, agent, and evidence-based status", async () => {
+    await renderTask();
     expect(screen.getByRole("link", { name: "Harbor" })).toHaveAttribute("href", "/acme/projects/project");
     expect(screen.getByText("Jacobin")).toBeInTheDocument();
     expect(screen.getByText("Codex")).toBeInTheDocument();
@@ -63,7 +67,7 @@ describe("Agent tasks page", () => {
       turnId: "", eventType: "memory_read", occurredAt: "2026-11-07T16:40:39Z",
       receivedAt: "2026-11-07T16:40:39Z", evidence: "",
     };
-    renderTask([
+    await renderTask([
       {
         ...event, eventId: "later", localSeq: 2,
         memoryReceipt: {
