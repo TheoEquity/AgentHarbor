@@ -1,9 +1,9 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/logo-light.svg">
-  <img alt="Multica" src="docs/assets/logo-light.svg" width="160">
+  <source media="(prefers-color-scheme: dark)" srcset="../../assets/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="../../assets/logo-light.svg">
+  <img alt="Multica" src="../../assets/logo-light.svg" width="160">
 </picture>
 
 # Vision
@@ -94,5 +94,5 @@ of record and action for human-agent work.**
 ## Where we are on that path
 
 This document describes the future Multica is building, not a feature list. For what actually
-works today, see the [README](README.md) — everything listed there is live, and each feature
+works today, see the [README](../../../README.md) — everything listed there is live, and each feature
 links to its docs.

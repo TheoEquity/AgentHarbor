@@ -1,11 +1,11 @@
 # AgentHarbor 第一版实施方案：两机 Codex
 
-> 历史实施方案：下文的 MemoryCore L3 路径和当时的发布状态不代表当前实现。当前代码入口见 [agent.md](../../agent.md)。
+> 历史实施方案：下文的 MemoryCore L3 路径和当时的发布状态不代表当前实现。当前代码入口见 [agent.md](../../../agent.md)。
 
 整理日期：2026-11-07
 状态：A 机本机同步与导入已实现并验收；B 机和完整 M01–M05 待验收
 
-本方案以[完整需求](requirements.md)为目标背景，以[最小验收 M01–M05](acceptance.md)作为第一版交付门槛。当前已完成的 A 机部分及其实际限制见[本机验收记录](local-acceptance-a.md)；代码尚未推送公开仓库，B 机接入后仍需复核。本轮只适配 Codex：A 机模拟云端并运行 Codex，B 机运行另一实例 Codex；两机各自从原有入口开始任务。第一版使用腾讯 MemoryCore 作为项目记忆服务。后续 Agent 仍可沿用适配器边界加入，但不计入本轮交付。
+本方案以[完整需求](../requirements.md)为目标背景，以[最小验收 M01–M05](acceptance.md)作为第一版交付门槛。当前已完成的 A 机部分及其实际限制见[本机验收记录](local-acceptance-a.md)；代码尚未推送公开仓库，B 机接入后仍需复核。本轮只适配 Codex：A 机模拟云端并运行 Codex，B 机运行另一实例 Codex；两机各自从原有入口开始任务。第一版使用腾讯 MemoryCore 作为项目记忆服务。后续 Agent 仍可沿用适配器边界加入，但不计入本轮交付。
 
 具体组件、数据、接口和 A/B 运行方式见[两机 Codex 技术方案](technical-design-v1.md)。
 

@@ -25,11 +25,11 @@ AgentHarbor 先供个人使用，管理多台机器、多个项目和参与工�
 | 入口 | 用途 |
 | --- | --- |
 | [完整需求](docs/agentharbor/requirements.md) | 当前产品范围和页面要求 |
-| [下一阶段需求](docs/agentharbor/next-stage-requirements.md) | 记忆改造前的需求记录；现状以本文第 3 节和代码为准 |
-| [下一阶段技术方案](docs/agentharbor/technical-design-v2.md) | 四类记忆改造的设计记录；现状以本文第 3 节和代码为准 |
-| [首版技术方案](docs/agentharbor/technical-design-v1.md) | 两机部署及早期设计；其中建议不等于当前实现 |
-| [最小验收与部署](docs/agentharbor/acceptance.md) | 本机模拟云端、另一台机器接入的验收范围 |
-| [本机验收记录](docs/agentharbor/local-acceptance-a.md) | 历史检查结果，不代表当前环境仍处于相同状态 |
+| [下一阶段需求](docs/agentharbor/archive/next-stage-requirements.md) | 记忆改造前的需求记录；现状以本文第 3 节和代码为准 |
+| [下一阶段技术方案](docs/agentharbor/archive/technical-design-v2.md) | 四类记忆改造的设计记录；现状以本文第 3 节和代码为准 |
+| [首版技术方案](docs/agentharbor/archive/technical-design-v1.md) | 两机部署及早期设计；其中建议不等于当前实现 |
+| [最小验收与部署](docs/agentharbor/archive/acceptance.md) | 本机模拟云端、另一台机器接入的验收范围 |
+| [本机验收记录](docs/agentharbor/archive/local-acceptance-a.md) | 历史检查结果，不代表当前环境仍处于相同状态 |
 | [连接程序说明](tools/agentharbor-connector/README.md) | 现有本地采集与同步方式 |
 
 首版方案、下一阶段需求与 v2 方案保留当时的设计和历史事实；本文第 3 节记录当前代码入口，第 5 节是开发摘要。发现冲突时，核对用户最新明确要求、实际代码和验证记录；不能把方案文字或 HTML 模拟效果当作实现证据。

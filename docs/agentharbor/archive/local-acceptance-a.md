@@ -1,6 +1,6 @@
 # A 机本机同步与导入验收
 
-> 历史验收记录：结果只适用于下文所列日期和代码版本，不能证明当前版本或双机流程已通过。当前实现见 [agent.md](../../agent.md)。
+> 历史验收记录：结果只适用于下文所列日期和代码版本，不能证明当前版本或双机流程已通过。当前实现见 [agent.md](../../../agent.md)。
 
 日期：2026-11-07
 范围：只验收 A 机上的 Codex → 本机连接程序 → 本机模拟云端 → 任务与项目记忆回读。B 机接入另行验收。
@@ -27,7 +27,7 @@
 
 1. 在独立目录检出 TencentDB-Agent-Memory 的 `feat/server_team` 分支并固定到 `2002196f`。进入其 `MemoryCore` 目录，安装依赖，按 `tdai-gateway.standalone.yaml` 启动 Gateway。为 `TDAI_DATA_DIR`、`TDAI_METADATA_SQLITE_BASE_DIR` 指定持久化目录，设置 `TDAI_GATEWAY_API_KEY`。本机仅验收手工 L3 写读时可使用不连接外部模型的测试 LLM 地址；自动提炼需要真实可用的模型配置。
 2. 在代码仓库复制 `.env.example` 为未跟踪的 `.env`，填写随机的 `JWT_SECRET`、PostgreSQL 密码、`AGENTHARBOR_MEMORYCORE_URL=http://host.docker.internal:18420`，以及与 Gateway 一致的 `AGENTHARBOR_MEMORYCORE_API_KEY`。运行 `docker compose -p agentharbor-v1 -f docker-compose.selfhost.yml -f docker-compose.selfhost.build.yml up -d --build postgres backend`。
-3. 在服务端创建工作区、项目和个人访问令牌。按 [连接程序说明](../../tools/agentharbor-connector/README.md)设置 `AGENTHARBOR_URL`、`AGENTHARBOR_WORKSPACE_ID`、`AGENTHARBOR_PROJECT_ID`、`AGENTHARBOR_PAT`。在当前 Codex CLI 版本，把示例 Hook 条目加入 `$CODEX_HOME/hooks.json`，并启用 `hooks` 功能；仅为对应项目启动的 Codex 进程设置 `AGENTHARBOR_PROJECT_ID`。
+3. 在服务端创建工作区、项目和个人访问令牌。按 [连接程序说明](../../../tools/agentharbor-connector/README.md)设置 `AGENTHARBOR_URL`、`AGENTHARBOR_WORKSPACE_ID`、`AGENTHARBOR_PROJECT_ID`、`AGENTHARBOR_PAT`。在当前 Codex CLI 版本，把示例 Hook 条目加入 `$CODEX_HOME/hooks.json`，并启用 `hooks` 功能；仅为对应项目启动的 Codex 进程设置 `AGENTHARBOR_PROJECT_ID`。
 4. 用 `PUT /api/projects/{id}/memory/core` 保存项目约定，运行 `python tools/agentharbor-connector/connector.py sync-once` 把记忆下载到本机缓存。正常从 Codex 开始任务。再运行一次 `sync-once` 上传 Hook 事件并下载任务；用 `python tools/agentharbor-connector/connector.py tasks` 查看已导入任务。日常定时同步使用 `run` 命令，当前周期 30 秒。
 
 ## 仍需验收
