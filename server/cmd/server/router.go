@@ -1710,6 +1710,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
 	r.Post("/api/agentharbor/memory/materials", h.SubmitAgentHarborMemoryMaterial)
 	r.Get("/api/agentharbor/memory/entries", h.ListScopedAgentHarborMemoryEntries)
 	r.Get("/api/agentharbor/memory/context", h.GetScopedAgentHarborMemoryContext)
+	r.Handle("/api/agentharbor/memory/mcp", h.AgentHarborMemoryMCP())
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.Auth(queries, patCache, cloudPATVerifier, cfSigner))

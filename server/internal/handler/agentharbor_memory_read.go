@@ -52,6 +52,11 @@ type agentHarborMemoryDispute struct {
 	Report db.ListAgentHarborMemoryDisputesRow `json:"report"`
 }
 
+type agentHarborMemorySearchResult struct {
+	Entries  []db.AgentharborMemoryEntry `json:"entries"`
+	Disputes []agentHarborMemoryDispute  `json:"disputes"`
+}
+
 func (h *Handler) memoryDisputes(ctx context.Context, scope agentHarborMemoryScope, entries []db.AgentharborMemoryEntry) ([]agentHarborMemoryDispute, error) {
 	disputes := make([]agentHarborMemoryDispute, 0)
 	if len(entries) == 0 {
@@ -85,20 +90,26 @@ func (h *Handler) ListScopedAgentHarborMemoryEntries(w http.ResponseWriter, r *h
 	if !ok {
 		return
 	}
-	kind, query := r.URL.Query().Get("type"), strings.TrimSpace(r.URL.Query().Get("query"))
+	result, failure := h.searchMemoryEntries(r.Context(), scope, r.URL.Query().Get("type"), r.URL.Query().Get("query"))
+	if failure != nil {
+		failure.writeHTTP(w)
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) searchMemoryEntries(ctx context.Context, scope agentHarborMemoryScope, kind, query string) (agentHarborMemorySearchResult, *agentHarborMemoryFailure) {
+	query = strings.TrimSpace(query)
 	if (kind != "" && !validMemoryType(kind)) || len(query) > 512 || strings.ContainsRune(query, 0) {
-		writeError(w, http.StatusBadRequest, "invalid memory search filters")
-		return
+		return agentHarborMemorySearchResult{}, &agentHarborMemoryFailure{status: http.StatusBadRequest, message: "invalid memory search filters"}
 	}
-	rows, err := h.readableMemoryEntries(r.Context(), scope, kind, query, 25, false)
+	rows, err := h.readableMemoryEntries(ctx, scope, kind, query, 25, false)
 	if err != nil {
-		memoryStoreError(w, err)
-		return
+		return agentHarborMemorySearchResult{}, memoryStoreFailure(err)
 	}
-	disputes, err := h.memoryDisputes(r.Context(), scope, rows)
+	disputes, err := h.memoryDisputes(ctx, scope, rows)
 	if err != nil {
-		memoryStoreError(w, err)
-		return
+		return agentHarborMemorySearchResult{}, memoryStoreFailure(err)
 	}
 	disputed := make(map[pgtype.UUID]bool, len(disputes))
 	for _, dispute := range disputes {
@@ -110,7 +121,7 @@ func (h *Handler) ListScopedAgentHarborMemoryEntries(w http.ResponseWriter, r *h
 			entries = append(entries, row)
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"entries": entries, "disputes": disputes})
+	return agentHarborMemorySearchResult{Entries: entries, Disputes: disputes}, nil
 }
 
 func (h *Handler) GetAgentHarborMemoryHistory(w http.ResponseWriter, r *http.Request) {
@@ -123,8 +134,9 @@ func (h *Handler) GetAgentHarborMemoryHistory(w http.ResponseWriter, r *http.Req
 		return
 	}
 	ctx := r.Context()
-	entry, ok := loadMemoryEntry(w, ctx, h.Queries, scope, id)
-	if !ok {
+	entry, failure := loadMemoryEntry(ctx, h.Queries, scope, id)
+	if failure != nil {
+		failure.writeHTTP(w)
 		return
 	}
 	revisions, err := h.Queries.ListAgentHarborMemoryRevisions(ctx, db.ListAgentHarborMemoryRevisionsParams{
