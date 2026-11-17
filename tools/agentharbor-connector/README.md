@@ -2,9 +2,15 @@
 
 The connector uses Python 3.10+ and the standard library. It queues Codex lifecycle events locally and syncs them to AgentHarbor every 30 seconds. The separate memory connection lets Codex search readable entries, submit materials for review, and load a small amount of current memory at the first prompt of a session.
 
-## Quick memory connection
+## Connect Codex memory on Windows
 
-In AgentHarbor, open the project's **Memory → Settings**, then choose **Copy connection info**. The clipboard holds a project-scoped token for 30 days. Keep it out of chat. Replace `<project-directory>` with the selected project's existing local code directory. From the AgentHarbor source checkout, ask Codex to run:
+In AgentHarbor, open **Project memory → Settings**, select the project, then choose **Copy details and download helper**. Run the downloaded `connect-codex-memory.ps1` with Windows PowerShell and select the directory you open in Codex. Use the instructions in the page if Windows blocks the downloaded file. The helper validates the project and MCP server, saves the credential for the current Windows user, and merges the project MCP and startup Hook. Open the bound directory in Codex, trust it if prompted, and review the Hook in **Settings → Hooks**. Start a fresh chat after reviewing the Hook.
+
+The startup Hook reads a short summary of approved project knowledge. Codex can also search or submit a material for review. Approved materials become readable after review in the existing memory page. Repeat the same connection steps after the 30-day credential expires. The Windows memory connection uses built-in PowerShell and the AgentHarbor server. Task monitoring and sync use the separate Python connector below.
+
+## Existing Python memory connection
+
+Use this setup for an existing Python connection or on a system outside the Windows helper's scope. In **Project memory → Settings**, choose **Copy details and download helper** to obtain the project connection details. The clipboard holds a project-scoped token for 30 days. Keep it out of chat. Replace `<project-directory>` with the selected project's existing local code directory. From the AgentHarbor source checkout, run:
 
 ```powershell
 py -3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, api } from "@multica/core/api";
 import { copyText } from "@multica/ui/lib/clipboard";
 import type { AgentHarborMemoryEntry, AgentHarborMemoryMaterial, AgentHarborMemorySettings } from "@multica/core/api/schemas";
@@ -51,6 +51,12 @@ const settings: AgentHarborMemorySettings = {
   recordEnabled: true, cloudEnabled: true, useMemory: true, useGlobal: false,
 };
 
+const connectionToken = {
+  token: "ahm_example",
+  projectId: "project",
+  expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
   client.setQueryData(projectListOptions("ws-1").queryKey, {
@@ -75,27 +81,53 @@ beforeEach(() => {
   );
   vi.mocked(api.getAgentHarborMemorySettings).mockResolvedValue(settings);
   vi.mocked(api.getAgentHarborMemoryHistory).mockResolvedValue({ revisions: [], materials: [source], disputes: [] });
+  vi.mocked(api.issueAgentHarborMemoryToken).mockResolvedValue(connectionToken);
 });
 
+afterEach(() => vi.restoreAllMocks());
+
 describe("Project memory page", () => {
-  it("copies a scoped Codex connection without showing its token", async () => {
-    vi.mocked(api.issueAgentHarborMemoryToken).mockResolvedValue({
-      token: "ahm_example", projectId: "project", expiresAt: "2026-12-14T10:00:00Z",
-    });
+  it("copies a scoped Codex connection and requests the Windows helper download", async () => {
+    vi.mocked(api.getBaseUrl).mockReturnValue("");
     vi.mocked(copyText).mockResolvedValue(true);
+    const download = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     const { user } = renderPage();
     await user.click(screen.getByRole("tab", { name: "Settings" }));
-    expect(screen.getByText('py -3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"')).toBeInTheDocument();
-    expect(screen.getByText('python3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"')).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: "Copy connection info" }));
+    await user.click(await screen.findByRole("button", { name: "Copy info and download helper" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Connection info copied");
     expect(api.issueAgentHarborMemoryToken).toHaveBeenCalledWith("project");
     expect(JSON.parse(vi.mocked(copyText).mock.calls[0]?.[0] ?? "{}")).toEqual({
-      version: 1, api_url: "https://api.example.test", project_id: "project",
-      token: "ahm_example", expires_at: "2026-12-14T10:00:00Z",
+      version: 1, api_url: window.location.origin, project_id: "project",
+      token: connectionToken.token, expires_at: connectionToken.expiresAt,
     });
-    expect(await screen.findByRole("status")).toHaveTextContent("Copied");
-    expect(screen.queryByText("ahm_example")).not.toBeInTheDocument();
+    expect(download).toHaveBeenCalledOnce();
+    const downloadPath = "/agentharbor/connect-codex-memory.ps1";
+    expect(download.mock.contexts[0]).toHaveAttribute("href", downloadPath);
+    expect(download.mock.contexts[0]).toHaveAttribute("download", "connect-codex-memory.ps1");
+    expect(screen.getByRole("link", { name: "Download helper again" })).toHaveAttribute("href", downloadPath);
+    expect(screen.getByText(/Run with PowerShell/)).toBeInTheDocument();
+    expect(screen.queryByText(connectionToken.token)).not.toBeInTheDocument();
   });
+
+  it("retries denied clipboard access with the same connection info", async () => {
+    vi.mocked(copyText).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const download = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const { user } = renderPage();
+    await user.click(screen.getByRole("tab", { name: "Settings" }));
+    const prepare = await screen.findByRole("button", { name: "Copy info and download helper" });
+
+    await user.click(prepare);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Unable to copy connection info");
+    expect(download).not.toHaveBeenCalled();
+
+    await user.click(prepare);
+    expect(await screen.findByRole("status")).toHaveTextContent("Connection info copied");
+    expect(api.issueAgentHarborMemoryToken).toHaveBeenCalledOnce();
+    expect(copyText).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(copyText).mock.calls[1]).toEqual(vi.mocked(copyText).mock.calls[0]);
+    expect(download).toHaveBeenCalledOnce();
+  });
+
   it("approves edited material into general memory and opens authorized provenance and history", async () => {
     const reviewed = { ...source, status: "processed" as const };
     const approved = {

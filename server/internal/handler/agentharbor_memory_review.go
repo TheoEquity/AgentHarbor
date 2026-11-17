@@ -67,9 +67,27 @@ func decodeMemoryBody(w http.ResponseWriter, r *http.Request, body any) bool {
 	return true
 }
 
-func memoryStoreError(w http.ResponseWriter, err error) {
+type agentHarborMemoryFailure struct {
+	status  int
+	message string
+	code    string
+}
+
+func (f *agentHarborMemoryFailure) writeHTTP(w http.ResponseWriter) {
+	if f.code != "" {
+		writeErrorCode(w, f.status, f.code, f.message)
+		return
+	}
+	writeError(w, f.status, f.message)
+}
+
+func memoryStoreFailure(err error) *agentHarborMemoryFailure {
 	slog.Error("AgentHarbor memory operation failed", "error", err)
-	writeError(w, http.StatusInternalServerError, "memory operation failed")
+	return &agentHarborMemoryFailure{status: http.StatusInternalServerError, message: "memory operation failed"}
+}
+
+func memoryStoreError(w http.ResponseWriter, err error) {
+	memoryStoreFailure(err).writeHTTP(w)
 }
 
 func (h *Handler) GetAgentHarborMemorySettings(w http.ResponseWriter, r *http.Request) {
@@ -104,8 +122,9 @@ func (h *Handler) PutAgentHarborMemorySettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 	ctx := r.Context()
-	tx, q, ok := h.beginMemoryWrite(w, ctx, scope)
-	if !ok {
+	tx, q, failure := h.beginMemoryWrite(ctx, scope)
+	if failure != nil {
+		failure.writeHTTP(w)
 		return
 	}
 	defer tx.Rollback(ctx)
@@ -141,11 +160,10 @@ func optionalMemoryID(w http.ResponseWriter, value, name string) (pgtype.UUID, b
 	return parseUUIDOrBadRequest(w, value, name)
 }
 
-func (h *Handler) beginMemoryWrite(w http.ResponseWriter, ctx context.Context, scope agentHarborMemoryScope) (pgx.Tx, *db.Queries, bool) {
+func (h *Handler) beginMemoryWrite(ctx context.Context, scope agentHarborMemoryScope) (pgx.Tx, *db.Queries, *agentHarborMemoryFailure) {
 	tx, err := h.TxStarter.Begin(ctx)
 	if err != nil {
-		memoryStoreError(w, err)
-		return nil, nil, false
+		return nil, nil, memoryStoreFailure(err)
 	}
 	q := h.Queries.WithTx(tx)
 	_, err = q.LockWorkspaceForChatSessionCreate(ctx, scope.workspace)
@@ -153,15 +171,13 @@ func (h *Handler) beginMemoryWrite(w http.ResponseWriter, ctx context.Context, s
 		_, err = q.LockProjectForChatSessionCreate(ctx, db.LockProjectForChatSessionCreateParams{ID: scope.project, WorkspaceID: scope.workspace})
 	}
 	if err == nil {
-		return tx, q, true
+		return tx, q, nil
 	}
 	_ = tx.Rollback(ctx)
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeError(w, http.StatusNotFound, "memory project not found")
-	} else {
-		memoryStoreError(w, err)
+		return nil, nil, &agentHarborMemoryFailure{status: http.StatusNotFound, message: "memory project not found"}
 	}
-	return nil, nil, false
+	return nil, nil, memoryStoreFailure(err)
 }
 
 type agentHarborMemoryReview struct {
@@ -222,8 +238,9 @@ func (h *Handler) ReviewAgentHarborMemoryMaterial(w http.ResponseWriter, r *http
 	}
 
 	ctx := r.Context()
-	tx, q, ok := h.beginMemoryWrite(w, ctx, scope)
-	if !ok {
+	tx, q, failure := h.beginMemoryWrite(ctx, scope)
+	if failure != nil {
+		failure.writeHTTP(w)
 		return
 	}
 	defer tx.Rollback(ctx)
@@ -293,23 +310,25 @@ func allowMemoryCloudWrite(w http.ResponseWriter, ctx context.Context, q *db.Que
 	return true
 }
 
-func loadMemoryEntry(w http.ResponseWriter, ctx context.Context, q *db.Queries, scope agentHarborMemoryScope, id pgtype.UUID) (db.AgentharborMemoryEntry, bool) {
+func loadMemoryEntry(ctx context.Context, q *db.Queries, scope agentHarborMemoryScope, id pgtype.UUID) (db.AgentharborMemoryEntry, *agentHarborMemoryFailure) {
 	entry, err := q.GetAgentHarborMemoryEntry(ctx, db.GetAgentHarborMemoryEntryParams{
 		WorkspaceID: scope.workspace, ID: id, BoundProjectID: scope.project, ActorID: scope.actor,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
-		writeError(w, http.StatusNotFound, "memory entry not found")
-	} else if err != nil {
-		memoryStoreError(w, err)
+		return entry, &agentHarborMemoryFailure{status: http.StatusNotFound, message: "memory entry not found"}
 	}
-	return entry, err == nil
+	if err != nil {
+		return entry, memoryStoreFailure(err)
+	}
+	return entry, nil
 }
 
 func saveReviewedMemoryEntry(w http.ResponseWriter, ctx context.Context, q *db.Queries, scope agentHarborMemoryScope, body agentHarborMemoryReview, targetID pgtype.UUID, ids []pgtype.UUID) (db.AgentharborMemoryEntry, bool) {
 	title, content := strings.TrimSpace(body.Title), strings.TrimSpace(body.Content)
 	if targetID.Valid {
-		old, ok := loadMemoryEntry(w, ctx, q, scope, targetID)
-		if !ok {
+		old, failure := loadMemoryEntry(ctx, q, scope, targetID)
+		if failure != nil {
+			failure.writeHTTP(w)
 			return db.AgentharborMemoryEntry{}, false
 		}
 		if old.Scope != body.Scope || old.Status != "active" {
@@ -385,16 +404,18 @@ func (h *Handler) UpdateAgentHarborMemoryEntry(w http.ResponseWriter, r *http.Re
 		return
 	}
 	ctx := r.Context()
-	tx, q, ok := h.beginMemoryWrite(w, ctx, scope)
-	if !ok {
+	tx, q, failure := h.beginMemoryWrite(ctx, scope)
+	if failure != nil {
+		failure.writeHTTP(w)
 		return
 	}
 	defer tx.Rollback(ctx)
 	if !allowMemoryCloudWrite(w, ctx, q, scope) {
 		return
 	}
-	old, ok := loadMemoryEntry(w, ctx, q, scope, id)
-	if !ok {
+	old, failure := loadMemoryEntry(ctx, q, scope, id)
+	if failure != nil {
+		failure.writeHTTP(w)
 		return
 	}
 	status := old.Status

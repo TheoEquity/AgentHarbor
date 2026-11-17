@@ -19,20 +19,18 @@ import { projectKeys, projectListOptions } from "@multica/core/projects/queries"
 import { BookOpenText, RefreshCw } from "@multica/ui/icons";
 import { IconButton } from "@multica/ui/components/common/icon-button";
 import { Button } from "@multica/ui/components/ui/button";
-import { copyText } from "@multica/ui/lib/clipboard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@multica/ui/components/ui/select";
 import { Switch } from "@multica/ui/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@multica/ui/components/ui/tabs";
 import { useLocale, useT } from "../i18n";
 import { PageHeader } from "../layout/page-header";
+import { ProjectMemoryConnection } from "./project-memory-connection";
 import { MemoryEntryRow } from "./project-memory-entry";
 import { MemoryLoadError, MemoryMessage } from "./project-memory-feedback";
 import { EntryEditor, MaterialReview } from "./project-memory-page-editor";
 
 const EMPTY_ENTRIES: AgentHarborMemoryEntry[] = [];
 const EMPTY_MATERIALS: AgentHarborMemoryMaterial[] = [];
-const CONNECT_COMMAND_WINDOWS = 'py -3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"';
-const CONNECT_COMMAND_UNIX = 'python3 tools/agentharbor-connector/connector.py connect --project-root "<project-directory>"';
 
 export function ProjectMemoryPage() {
   const { t } = useT("layout");
@@ -238,8 +236,6 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
   const queryClient = useQueryClient();
   const query = useQuery(agentHarborMemorySettingsOptions(wsId, projectId));
   const [draft, setDraft] = useState<AgentHarborMemorySettings | null>(null);
-  const [connectStatus, setConnectStatus] = useState<"copied" | "error" | null>(null);
-  const issueConnection = useMutation({ mutationFn: () => api.issueAgentHarborMemoryToken(projectId) });
   const save = useMutation({
     mutationFn: (settings: AgentHarborMemorySettings) => api.putAgentHarborMemorySettings(projectId, settings),
     onSuccess: (settings) => {
@@ -259,26 +255,6 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
     { key: "useGlobal", label: t(($) => $.project_memory.use_global), disabled: !settings.useMemory },
   ] as const;
   const changed = fields.some(({ key }) => settings[key] !== saved[key]);
-
-  async function copyCodexConnection() {
-    setConnectStatus(null);
-    try {
-      const apiUrl = new URL(api.getBaseUrl() || window.location.origin, window.location.href);
-      if (apiUrl.protocol !== "http:" && apiUrl.protocol !== "https:") throw new Error("Invalid API URL");
-      const issued = await issueConnection.mutateAsync();
-      if (issued.projectId !== projectId) throw new Error("Wrong project");
-      const copied = await copyText(JSON.stringify({
-        version: 1,
-        api_url: apiUrl.href.replace(/\/$/, ""),
-        project_id: issued.projectId,
-        token: issued.token,
-        expires_at: issued.expiresAt,
-      }));
-      setConnectStatus(copied ? "copied" : "error");
-    } catch {
-      setConnectStatus("error");
-    }
-  }
 
   return (
     <div className="space-y-4">
@@ -307,21 +283,7 @@ function ProjectMemorySettings({ wsId, projectId }: { wsId: string; projectId: s
           </Button>
         </div>
       </form>
-      <section className="space-y-3 rounded-xl border border-surface-border bg-card p-4">
-        <h2 className="font-medium">{t(($) => $.project_memory.connect_codex)}</h2>
-        <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_note)}</p>
-        <div className="space-y-2">
-          <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_windows)}</p>
-          <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-caption">{CONNECT_COMMAND_WINDOWS}</code>
-          <p className="text-caption text-muted-foreground">{t(($) => $.project_memory.connect_unix)}</p>
-          <code className="block overflow-x-auto rounded-md bg-muted px-3 py-2 text-caption">{CONNECT_COMMAND_UNIX}</code>
-        </div>
-        <Button type="button" variant="outline" size="sm" disabled={issueConnection.isPending} aria-busy={issueConnection.isPending} onClick={() => void copyCodexConnection()}>
-          {t(($) => $.project_memory.copy_connection)}
-        </Button>
-        {connectStatus === "copied" && <p role="status" className="text-caption text-muted-foreground">{t(($) => $.project_memory.connection_copied)}</p>}
-        {connectStatus === "error" && <p role="alert" className="text-caption text-destructive">{t(($) => $.project_memory.connection_error)}</p>}
-      </section>
+      <ProjectMemoryConnection projectId={projectId} />
     </div>
   );
 }
